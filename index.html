@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="SkillHub Nigeria empowers youth and adults with practical, market-relevant skills for sustainable livelihoods and business success. Join our catering, ICT, fashion, and welding programs today."
+    />
+    <title>Nigeria Skills Training Hub - Empowering Entrepreneurs</title>
+    <script>
+      (function () {
+        window.tailwind = window.tailwind || {};
+        window.tailwind.config = {
+          theme: {
+            extend: {
+              colors: {
+                primary: "#00A86B",
+                secondary: "#FF8C00",
+              },
+            },
+          },
+        };
+      })();
+    </script>
+    <script src="https://cdn.tailwindcss.com/3.4.16"></script>
+    <link rel="stylesheet" href="css/montserrat.css" />
+    <link rel="stylesheet" href="css/remixicon.min.css" />
+    <style>
+      :where([class^="ri-"])::before {
+        content: "\f3c2";
+      }
+      /* Fallback for when CDN fails */
+      :root {
+        --primary: #00a86b;
+        --secondary: #ff8c00;
+      }
+      .text-primary {
+        color: var(--primary) !important;
+      }
+      .bg-primary {
+        background-color: var(--primary) !important;
+      }
+      .border-primary {
+        border-color: var(--primary) !important;
+      }
+      .border-2 {
+        border-width: 2px !important;
+      }
+      .text-white {
+        color: #fff !important;
+      }
+      .text-gray-900 {
+        color: #0f172a !important;
+      }
+      .text-gray-600 {
+        color: #4b5563 !important;
+      }
+      .text-gray-100 {
+        color: #f3f4f6 !important;
+      }
+      .text-yellow-400 {
+        color: #facc15 !important;
+      }
+      .text-secondary {
+        color: var(--secondary) !important;
+      }
+      .bg-white {
+        background-color: #fff !important;
+      }
+      .bg-gray-50 {
+        background-color: #f9fafb !important;
+      }
+      .bg-gray-200 {
+        background-color: #e5e7eb !important;
+      }
+      .bg-gray-900 {
+        background-color: #111827 !important;
+      }
+      /* Only apply gradient to sections with both classes */
+      section.bg-gradient-to-r {
+        background-image: linear-gradient(
+          to right,
+          var(--primary),
+          #16a34a
+        ) !important;
+      }
+      .rounded-lg {
+        border-radius: 0.5rem !important;
+      }
+      .rounded-full {
+        border-radius: 9999px !important;
+      }
+      .shadow-sm {
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+      }
+      .hover\:text-primary:hover {
+        color: var(--primary) !important;
+      }
+      .hover\:bg-primary:hover {
+        background-color: var(--primary) !important;
+      }
+      .hover\:text-white:hover {
+        color: #fff !important;
+      }
+      .hover\:shadow-xl:hover {
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1) !important;
+      }
+      .hover\:-translate-y-2:hover {
+        transform: translateY(-0.5rem) !important;
+      }
+      .transition-colors {
+        transition: background-color 0.3s, color 0.3s !important;
+      }
+      .transition-all {
+        transition: all 0.3s ease !important;
+      }
+      button:hover {
+        transition: all 0.3s ease !important;
+      }
+    </style>
+  </head>
+  <body class="bg-white">
+    <nav class="bg-white shadow-sm sticky top-0 z-50">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center h-16">
+          <div class="flex items-center space-x-3">
+            <!-- Added site images: docerad and ndu (reduced size) -->
+
+            <img
+              src="ndu%20img.png"
+              alt="NDU logo"
+              class="w-8 h-8 object-contain rounded"
+            />
+            <img
+              src="skillhub_logo.png"
+              alt="SkillHub Logo"
+              class="w-10 h-10 object-contain"
+            />
+            <div class="font-['Montserrat'] text-2xl text-primary">
+              Docerad SkillHub
+            </div>
+          </div>
+          <div class="hidden md:block">
+            <div class="ml-10 flex items-baseline space-x-2">
+              <a
+                href="#home"
+                class="text-gray-900 hover:text-primary px-3 py-2 text-sm font-medium transition-colors"
+                >Home</a
+              >
+              <a
+                href="#administration"
+                class="text-gray-600 hover:text-primary px-3 py-2 text-sm font-medium transition-colors"
+                >Administration</a
+              >
+              <a
+                href="#programs"
+                class="text-gray-600 hover:text-primary px-3 py-2 text-sm font-medium transition-colors"
+                >Programs</a
+              >
+              <a
+                href="#reviews"
+                class="text-gray-600 hover:text-primary px-3 py-2 text-sm font-medium transition-colors"
+                >Reviews</a
+              >
+              <a
+                href="#contact"
+                class="text-gray-600 hover:text-primary px-3 py-2 text-sm font-medium transition-colors"
+                >Contact</a
+              >
+              <!-- Auth buttons -->
+              <a
+                href="login.html"
+                class="bg-primary text-white px-3 py-2 text-sm font-medium rounded-md hover:bg-blue-700 transition-colors"
+                >Login</a
+              >
+              <a
+                href="sign.html"
+                class="bg-primary text-white px-3 py-2 text-sm font-medium rounded-md hover:bg-green-700 transition-colors"
+                >Get Started</a
+              >
+            </div>
+          </div>
+          <div class="md:hidden">
+            <button
+              id="mobile-menu-btn"
+              class="text-gray-600 hover:text-primary p-2"
+            >
+              <div class="w-6 h-6 flex items-center justify-center">
+                <i class="ri-menu-line ri-lg"></i>
+              </div>
+            </button>
+          </div>
+        </div>
+      </div>
+      <div id="mobile-menu" class="md:hidden hidden bg-white border-t">
+        <div class="px-2 pt-2 pb-3 space-y-1">
+          <a
+            href="#home"
+            class="block px-3 py-2 text-gray-900 hover:text-primary text-sm font-medium"
+            >Home</a
+          >
+          <a
+            href="#administration"
+            class="block px-3 py-2 text-gray-600 hover:text-primary text-sm font-medium"
+            >Administration</a
+          >
+          <a
+            href="#programs"
+            class="block px-3 py-2 text-gray-600 hover:text-primary text-sm font-medium"
+            >Programs</a
+          >
+          <a
+            href="#reviews"
+            class="block px-3 py-2 text-gray-600 hover:text-primary text-sm font-medium"
+            >Reviews</a
+          >
+          <a
+            href="#contact"
+            class="block px-3 py-2 text-gray-600 hover:text-primary text-sm font-medium"
+            >Contact</a
+          >
+          <!-- Mobile auth actions -->
+          <a
+            href="login.html"
+            class="block px-3 py-2 text-gray-600 hover:text-primary text-sm font-medium"
+            >Login</a
+          >
+          <a
+            href="sign.html"
+            class="block px-3 py-2 bg-primary text-white text-sm font-medium rounded-md text-center"
+            >Sign up</a
+          >
+        </div>
+      </div>
+    </nav>
+    <section
+      id="home"
+      class="relative min-h-screen flex items-center"
+      style="
+        background-image: url('images/index2_local/hero-entrepreneurs.jpg');
+        background-size: cover;
+        background-position: center;
+      "
+    >
+      <div
+        class="absolute inset-0 bg-gradient-to-r from-white via-white/90 to-transparent"
+      ></div>
+      <div class="relative w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="w-full lg:w-1/2">
+          <h1
+            class="text-4xl lg:text-6xl font-bold text-gray-900 mb-6 leading-tight"
+          >
+            Empower Your Future with
+            <span class="text-primary">Nigerian Skills</span>
+          </h1>
+          <p class="text-justify text-xl text-gray-600 mb-8 leading-relaxed">
+            Transform your life through comprehensive entrepreneurship training.
+            Master in-demand skills from catering to ICT, fashion design to
+            welding, and build a successful business in Nigeria's growing
+            economy.
+          </p>
+          <div class="flex flex-col sm:flex-row gap-4">
+            <!--
+<button class="bg-primary text-white px-8 py-4 !rounded-button text-lg font-semibold hover:bg-green-700 transition-colors whitespace-nowrap">
+Start Your Journey
+</button>
+-->
+            <a href="programs.html">
+              <button
+                class="border-2 border-primary text-primary px-8 py-4 rounded-lg text-lg font-semibold hover:bg-primary hover:text-white transition-colors whitespace-nowrap"
+              >
+                View Programs
+              </button>
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section
+      id="mission"
+      class="py-20 bg-gradient-to-br from-primary/5 to-secondary/5"
+    >
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-12">
+          <h2 class="text-3xl lg:text-4xl font-bold text-gray-900 mb-6">
+            Our Mission & Vision
+          </h2>
+        </div>
+        <div class="grid md:grid-cols-2 gap-12">
+          <div
+            class="bg-white p-8 rounded-lg shadow-sm relative z-10 hover:-translate-y-2 hover:shadow-xl transition-all duration-300"
+          >
+            <div
+              class="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-6"
+            >
+              <i class="ri-target-line ri-xl text-primary"></i>
+            </div>
+            <h3 class="text-2xl font-bold text-gray-900 mb-4">Our Mission</h3>
+            <p class="text-justify text-gray-600 text-lg leading-relaxed">
+              To empower Nigerian youth and adults with practical,
+              market-relevant skills that enable them to create sustainable
+              livelihoods, build successful businesses, and contribute
+              meaningfully to Nigeria's economic growth and development.
+            </p>
+          </div>
+          <div
+            class="bg-white p-8 rounded-lg shadow-sm hover:-translate-y-2 hover:shadow-xl transition-all duration-300"
+          >
+            <div
+              class="w-12 h-12 bg-secondary/10 rounded-full flex items-center justify-center mb-6"
+            >
+              <i class="ri-eye-line ri-xl text-secondary"></i>
+            </div>
+            <h3 class="text-2xl font-bold text-gray-900 mb-4">Our Vision</h3>
+            <p class="text-justify text-gray-600 text-lg leading-relaxed">
+              To become Nigeria's leading skills training institution,
+              recognized for excellence in vocational education, innovation in
+              teaching methods, and our graduates' success in transforming
+              communities across the nation.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section class="py-12 bg-gray-50">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-16">
+          <h2 class="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
+            Why Choose SkillHub Nigeria?
+          </h2>
+          <p class="text-center text-xl text-gray-600 max-w-3xl mx-auto">
+            We provide world-class training programs designed specifically for
+            Nigerian entrepreneurs
+          </p>
+        </div>
+        <div class="grid md:grid-cols-3 gap-8">
+          <div
+            class="bg-white p-8 rounded-lg shadow-sm text-center hover:-translate-y-2 hover:shadow-xl transition-all duration-300"
+          >
+            <div
+              class="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6"
+            >
+              <i class="ri-graduation-cap-line ri-2x text-primary"></i>
+            </div>
+            <h3 class="text-xl font-semibold mb-4">Expert Instructors</h3>
+            <p class="text-justify text-gray-600">
+              Learn from industry professionals with years of practical
+              experience in Nigerian markets
+            </p>
+          </div>
+          <div
+            class="bg-white p-8 rounded-lg shadow-sm text-center hover:-translate-y-2 hover:shadow-xl transition-all duration-300"
+          >
+            <div
+              class="w-16 h-16 bg-secondary/10 rounded-full flex items-center justify-center mx-auto mb-6"
+            >
+              <i class="ri-tools-line ri-2x text-secondary"></i>
+            </div>
+            <h3 class="text-xl font-semibold mb-4">Hands-On Training</h3>
+            <p class="text-justify text-gray-600">
+              Practical workshops with real equipment and materials to ensure
+              job-ready skills
+            </p>
+          </div>
+          <div
+            class="bg-white p-8 rounded-lg shadow-sm text-center hover:-translate-y-2 hover:shadow-xl transition-all duration-300"
+          >
+            <div
+              class="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6"
+            >
+              <i class="ri-trophy-line ri-2x text-primary"></i>
+            </div>
+            <h3 class="text-xl font-semibold mb-4">Certification</h3>
+            <p class="text-justify text-gray-600">
+              Receive recognized certificates that open doors to employment and
+              business opportunities
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section id="about" class="py-20 bg-white">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid lg:grid-cols-2 gap-12 items-center">
+          <div>
+            <h2 class="text-3xl lg:text-4xl font-bold text-gray-900 mb-6">
+              About SkillHub Nigeria
+            </h2>
+            <p class="text-justify text-lg text-gray-600 mb-6">
+              Founded with a vision to transform Nigeria's workforce, SkillHub
+              Nigeria is the premier destination for entrepreneurship and
+              vocational training. We bridge the gap between traditional
+              education and market demands by providing practical, hands-on
+              training in high-demand skills.
+            </p>
+            <p class="text-justify text-lg text-gray-600 mb-8">
+              Our comprehensive programs cover everything from traditional
+              crafts to modern technology, ensuring every Nigerian has access to
+              quality skills training that leads to sustainable employment and
+              successful entrepreneurship.
+            </p>
+            <div class="grid grid-cols-2 gap-6">
+              <div class="text-center">
+                <div class="text-3xl font-bold text-primary mb-2">5,000+</div>
+                <div class="text-gray-600">Graduates</div>
+              </div>
+              <div class="text-center">
+                <div class="text-3xl font-bold text-secondary mb-2">50+</div>
+                <div class="text-gray-600">Skill Programs</div>
+              </div>
+            </div>
+          </div>
+          <div class="relative">
+            <img
+              src="images/index2_local/about-facility.jpg"
+              alt="Training Facility"
+              class="rounded-lg shadow-lg object-cover w-full h-96"
+            />
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="administration" class="py-18 bg-white">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-16">
+          <h2 class="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
+            Administration
+          </h2>
+          <p class="text-center text-xl text-gray-600">
+            Meet our dedicated leadership team driving excellence in skills
+            education
+          </p>
+        </div>
+        <div class="grid md:grid-cols-3 gap-8">
+          <div
+            class="bg-gray-50 p-8 rounded-lg text-center hover:-translate-y-2 hover:shadow-xl transition-all duration-300"
+          >
+            <div
+              class="w-32 h-32 mx-auto mb-6 bg-gray-200 rounded-full overflow-hidden"
+            >
+              <img
+                src="images/index2_local/director1.jpg"
+                alt="Director"
+                class="w-full h-full object-cover"
+              />
+            </div>
+            <h3 class="text-xl font-bold text-gray-900 mb-2">
+              Dr. Oluwaseun Adebayo
+            </h3>
+            <p class="text-justify text-primary font-medium mb-4">
+              Executive Director
+            </p>
+            <p class="text-justify text-gray-600 mb-6">
+              Ph.D. in Educational Leadership with 15+ years experience in
+              vocational training administration
+            </p>
+          </div>
+          <div
+            class="bg-gray-50 p-8 rounded-lg text-center hover:-translate-y-2 hover:shadow-xl transition-all duration-300"
+          >
+            <div
+              class="w-32 h-32 mx-auto mb-6 bg-gray-200 rounded-full overflow-hidden"
+            >
+              <img
+                src="images/index2_local/director2.jpg"
+                alt="Director"
+                class="w-full h-full object-cover"
+              />
+            </div>
+            <h3 class="text-xl font-bold text-gray-900 mb-2">
+              Mrs. Amina Yusuf
+            </h3>
+            <p class="text-justify text-primary font-medium mb-4">
+              Director of Programs
+            </p>
+            <p class="text-justify text-gray-600 mb-6">
+              M.Ed. in Curriculum Development, pioneered multiple successful
+              training initiatives
+            </p>
+          </div>
+          <div
+            class="bg-gray-50 p-8 rounded-lg text-center hover:-translate-y-2 hover:shadow-xl transition-all duration-300"
+          >
+            <div
+              class="w-32 h-32 mx-auto mb-6 bg-gray-200 rounded-full overflow-hidden"
+            >
+              <img
+                src="images/index2_local/director3.jpg"
+                alt="Director"
+                class="w-full h-full object-cover"
+              />
+            </div>
+            <h3 class="text-xl font-bold text-gray-900 mb-2">
+              Mr. Chidi Okonkwo
+            </h3>
+            <p class="text-justify text-primary font-medium mb-4">
+              Head of Operations
+            </p>
+            <p class="text-justify text-gray-600 mb-6">
+              MBA, specialized in educational institution management and
+              strategic planning
+            </p>
+          </div>
+        </div>
+        <div class="mt-12 grid md:grid-cols-2 gap-8">
+          <div
+            class="bg-gray-50 p-8 rounded-lg hover:-translate-y-2 hover:shadow-xl transition-all duration-300"
+          >
+            <div class="flex items-center mb-6">
+              <div
+                class="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mr-4"
+              >
+                <i class="ri-government-line ri-xl text-primary"></i>
+              </div>
+              <h3 class="text-xl font-bold text-gray-900">Governance</h3>
+            </div>
+            <p class="text-justify text-gray-600">
+              Our institution is governed by a board of directors comprising
+              industry experts, educational leaders, and community
+              representatives who ensure transparency and excellence in all our
+              operations.
+            </p>
+          </div>
+          <div
+            class="bg-gray-50 p-8 rounded-lg hover:-translate-y-2 hover:shadow-xl transition-all duration-300"
+          >
+            <div class="flex items-center mb-6">
+              <div
+                class="w-12 h-12 bg-secondary/10 rounded-full flex items-center justify-center mr-4"
+              >
+                <i class="ri-shield-check-line ri-xl text-secondary"></i>
+              </div>
+              <h3 class="text-xl font-bold text-gray-900">Quality Assurance</h3>
+            </div>
+            <p class="text-justify text-gray-600">
+              We maintain rigorous quality standards through regular program
+              reviews, instructor evaluations, and student feedback to ensure
+              the highest quality of education and training.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="py-20 bg-white">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-16">
+          <h2 class="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
+            Popular Training Programs
+          </h2>
+          <p class="text-center text-xl text-gray-600">
+            Discover our most sought-after skills training programs
+          </p>
+        </div>
+        <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div
+            class="bg-gray-50 p-6 rounded-lg hover:shadow-xl hover:-translate-y-2 transition-all duration-300"
+          >
+            <img
+              src="images/index2_local/catering-program.jpg"
+              alt="Catering"
+              class="w-full h-32 object-cover rounded mb-4"
+            />
+            <h3 class="text-lg font-semibold mb-2">Catering & Food Services</h3>
+            <p class="text-justify text-gray-600 text-sm mb-4">
+              Master Nigerian and international cuisine
+            </p>
+          </div>
+          <div
+            class="bg-gray-50 p-6 rounded-lg hover:shadow-xl hover:-translate-y-2 transition-all duration-300"
+          >
+            <img
+              src="images/index2_local/ict-program.jpg"
+              alt="ICT"
+              class="w-full h-32 object-cover rounded mb-4"
+            />
+            <h3 class="text-lg font-semibold mb-2">ICT & Digital Skills</h3>
+            <p class="text-justify text-gray-600 text-sm mb-4">
+              Web development, digital marketing, and more
+            </p>
+          </div>
+          <div
+            class="bg-gray-50 p-6 rounded-lg hover:shadow-xl hover:-translate-y-2 transition-all duration-300"
+          >
+            <img
+              src="images/index2_local/fashion-program.jpg"
+              alt="Fashion"
+              class="w-full h-32 object-cover rounded mb-4"
+            />
+            <h3 class="text-lg font-semibold mb-2">Fashion Design</h3>
+            <p class="text-justify text-gray-600 text-sm mb-4">
+              Create stunning African and modern designs
+            </p>
+          </div>
+          <div
+            class="bg-gray-50 p-6 rounded-lg hover:shadow-xl hover:-translate-y-2 transition-all duration-300"
+          >
+            <img
+              src="images/index2_local/welding-program.jpg"
+              alt="Welding"
+              class="w-full h-32 object-cover rounded mb-4"
+            />
+            <h3 class="text-lg font-semibold mb-2">Welding & Fabrication</h3>
+            <p class="text-justify text-gray-600 text-sm mb-4">
+              Professional metalwork and construction skills
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Centered enroll button matching hero "View Programs" -->
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
+        <div class="flex justify-center">
+          <a href="programs.html">
+            <button
+              class="border-2 border-primary text-primary px-8 py-4 rounded-lg text-lg font-semibold hover:bg-primary hover:text-white transition-colors whitespace-nowrap"
+            >
+              Enroll Now
+            </button>
+          </a>
+        </div>
+      </div>
+    </section>
+    <section
+      id="reviews"
+      class="py-20 bg-gradient-to-r from-primary to-green-600 text-white"
+    >
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <div class="text-center mb-16">
+          <h2 class="text-3xl lg:text-4xl font-bold text-white mb-4">
+            Success Stories
+          </h2>
+          <p class="text-center text-xl text-gray-100">
+            Hear from our graduates who transformed their lives
+          </p>
+        </div>
+        <div class="grid md:grid-cols-3 gap-8">
+          <div
+            class="bg-white p-8 rounded-lg shadow-sm hover:-translate-y-2 hover:shadow-xl transition-all duration-300"
+          >
+            <div class="flex items-center mb-4">
+              <div class="w-12 h-12 bg-gray-200 rounded-full mr-4"></div>
+              <div>
+                <h4 class="font-semibold text-gray-900">Adunni Okafor</h4>
+                <p class="text-justify text-gray-600 text-sm">
+                  Fashion Designer
+                </p>
+              </div>
+            </div>
+            <p class="text-justify text-gray-600 mb-4">
+              "SkillHub transformed my passion for fashion into a thriving
+              business. I now employ 8 people and export to 3 African
+              countries."
+            </p>
+            <div class="flex text-yellow-400">
+              <i class="ri-star-fill"></i>
+              <i class="ri-star-fill"></i>
+              <i class="ri-star-fill"></i>
+              <i class="ri-star-fill"></i>
+              <i class="ri-star-fill"></i>
+            </div>
+          </div>
+          <div
+            class="bg-white p-8 rounded-lg shadow-sm relative z-10 hover:-translate-y-2 hover:shadow-xl transition-all duration-300"
+          >
+            <div class="flex items-center mb-4">
+              <div class="w-12 h-12 bg-gray-200 rounded-full mr-4"></div>
+              <div>
+                <h4 class="font-semibold text-gray-900">Emeka Nwosu</h4>
+                <p class="text-justify text-gray-600 text-sm">Web Developer</p>
+              </div>
+            </div>
+            <p class="text-justify text-gray-600 mb-4">
+              "The ICT program gave me skills that landed me a remote job with a
+              US company. I'm now earning in dollars while living in Lagos."
+            </p>
+            <div class="flex text-yellow-400">
+              <i class="ri-star-fill"></i>
+              <i class="ri-star-fill"></i>
+              <i class="ri-star-fill"></i>
+              <i class="ri-star-fill"></i>
+              <i class="ri-star-fill"></i>
+            </div>
+          </div>
+          <div
+            class="bg-white p-8 rounded-lg shadow-sm relative z-10 hover:-translate-y-2 hover:shadow-xl transition-all duration-300"
+          >
+            <div class="flex items-center mb-4">
+              <div class="w-12 h-12 bg-gray-200 rounded-full mr-4"></div>
+              <div>
+                <h4 class="font-semibold text-gray-900">Fatima Ibrahim</h4>
+                <p class="text-justify text-gray-600 text-sm">
+                  Catering Business Owner
+                </p>
+              </div>
+            </div>
+            <p class="text-justify text-gray-600 mb-4">
+              "From cooking for my family to catering for 500+ guest events.
+              SkillHub gave me the confidence and skills to build my dream
+              business."
+            </p>
+            <div class="flex text-yellow-400">
+              <i class="ri-star-fill"></i>
+              <i class="ri-star-fill"></i>
+              <i class="ri-star-fill"></i>
+              <i class="ri-star-fill"></i>
+              <i class="ri-star-fill"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <footer id="contact" class="bg-gray-900 text-white py-16">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid md:grid-cols-4 gap-8">
+          <div>
+            <div class="font-['Montserrat'] text-2xl text-primary mb-4">
+              SkillHub
+            </div>
+            <p class="text-justify text-gray-300 mb-4">
+              Empowering Nigerian entrepreneurs with world-class skills training
+              and certification programs.
+            </p>
+            <div class="flex space-x-4">
+              <div class="w-8 h-8 flex items-center justify-center">
+                <i class="ri-facebook-fill text-primary"></i>
+              </div>
+              <div class="w-8 h-8 flex items-center justify-center">
+                <i class="ri-twitter-fill text-primary"></i>
+              </div>
+              <div class="w-8 h-8 flex items-center justify-center">
+                <i class="ri-instagram-fill text-primary"></i>
+              </div>
+              <div class="w-8 h-8 flex items-center justify-center">
+                <i class="ri-linkedin-fill text-primary"></i>
+              </div>
+            </div>
+          </div>
+          <div>
+            <h3 class="text-lg font-semibold mb-4">Quick Links</h3>
+            <ul class="space-y-2 text-gray-300">
+              <li>
+                <a href="#" class="hover:text-primary transition-colors"
+                  >About Us</a
+                >
+              </li>
+              <li>
+                <a href="#" class="hover:text-primary transition-colors"
+                  >Programs</a
+                >
+              </li>
+              <li>
+                <a href="#" class="hover:text-primary transition-colors"
+                  >Admissions</a
+                >
+              </li>
+              <li>
+                <a href="#" class="hover:text-primary transition-colors"
+                  >Success Stories</a
+                >
+              </li>
+              <li>
+                <a href="#" class="hover:text-primary transition-colors"
+                  >Blog</a
+                >
+              </li>
+            </ul>
+          </div>
+          <div>
+            <h3 class="text-lg font-semibold mb-4">Programs</h3>
+            <ul class="space-y-2 text-gray-300">
+              <li>
+                <a href="#" class="hover:text-primary transition-colors"
+                  >Technical Skills</a
+                >
+              </li>
+              <li>
+                <a href="#" class="hover:text-primary transition-colors"
+                  >Digital Skills</a
+                >
+              </li>
+              <li>
+                <a href="#" class="hover:text-primary transition-colors"
+                  >Creative Arts</a
+                >
+              </li>
+              <li>
+                <a href="#" class="hover:text-primary transition-colors"
+                  >Business Skills</a
+                >
+              </li>
+              <li>
+                <a href="#" class="hover:text-primary transition-colors"
+                  >Agriculture</a
+                >
+              </li>
+            </ul>
+          </div>
+          <div>
+            <h3 class="text-lg font-semibold mb-4">Contact Info</h3>
+            <div class="space-y-3 text-gray-300">
+              <div class="flex items-center">
+                <div class="w-5 h-5 flex items-center justify-center mr-3">
+                  <i class="ri-map-pin-line"></i>
+                </div>
+                <span
+                  >PMB032 Niger Delta University, Southern Ijaw - Bayelsa,
+                  Nigeria</span
+                >
+              </div>
+              <div class="flex items-center">
+                <div class="w-5 h-5 flex items-center justify-center mr-3">
+                  <i class="ri-phone-line"></i>
+                </div>
+                <span>+234 8099009900</span>
+              </div>
+              <div class="flex items-center">
+                <div class="w-5 h-5 flex items-center justify-center mr-3">
+                  <i class="ri-mail-line"></i>
+                </div>
+                <span>info@skillhubnigeria.com</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div
+          class="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400"
+        >
+          <p class="text-justify">
+            &copy; 2025 SkillHub Nigeria. All rights reserved. Empowering
+            Nigerian entrepreneurs since 2020.
+          </p>
+        </div>
+      </div>
+    </footer>
+    <script id="mobile-menu-toggle">
+      document.addEventListener("DOMContentLoaded", function () {
+        const mobileMenuBtn = document.getElementById("mobile-menu-btn");
+        const mobileMenu = document.getElementById("mobile-menu");
+        mobileMenuBtn.addEventListener("click", function () {
+          mobileMenu.classList.toggle("hidden");
+        });
+      });
+    </script>
+    <script id="smooth-scrolling">
+      document.addEventListener("DOMContentLoaded", function () {
+        const links = document.querySelectorAll('a[href^="#"]');
+        links.forEach((link) => {
+          link.addEventListener("click", function (e) {
+            e.preventDefault();
+            const targetId = this.getAttribute("href");
+            const targetSection = document.querySelector(targetId);
+            if (targetSection) {
+              targetSection.scrollIntoView({
+                behavior: "smooth",
+                block: "start",
+              });
+            }
+          });
+        });
+      });
+    </script>
+  </body>
+</html>

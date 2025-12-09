@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Dashboard - Docerad SkillHub</title>
+    <script src="https://cdn.tailwindcss.com/3.4.16"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#00A86B',
+                        secondary: '#FF8C00',
+                        dark: '#1F2937'
+                    },
+                    fontFamily: {
+                        sans: ['Montserrat', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-50 font-sans">
+
+    <div class="flex h-screen overflow-hidden">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-white border-r border-gray-200 hidden md:flex flex-col">
+            <div class="p-6 flex items-center justify-center border-b border-gray-100">
+                <img src="../skillhub_logo.png" alt="Logo" class="w-10 h-10 mr-2">
+                <span class="text-xl font-bold text-primary">SkillHub</span>
+            </div>
+            
+            <nav class="flex-1 overflow-y-auto py-4">
+                <ul class="space-y-1 px-3">
+                    <li>
+                        <a href="#" onclick="showSection('dashboard')" class="flex items-center px-4 py-3 text-gray-600 hover:bg-primary/5 hover:text-primary rounded-lg transition-colors group">
+                            <i class="ri-dashboard-line mr-3 text-lg group-hover:text-primary"></i>
+                            <span class="font-medium">Dashboard</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" onclick="showSection('learning')" class="flex items-center px-4 py-3 text-gray-600 hover:bg-primary/5 hover:text-primary rounded-lg transition-colors group">
+                            <i class="ri-book-open-line mr-3 text-lg group-hover:text-primary"></i>
+                            <span class="font-medium">My Learning</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" onclick="showSection('account')" id="nav-account" class="flex items-center px-4 py-3 text-primary bg-primary/5 rounded-lg transition-colors group">
+                            <i class="ri-user-settings-line mr-3 text-lg"></i>
+                            <span class="font-medium">Account</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" onclick="showSection('settings')" class="flex items-center px-4 py-3 text-gray-600 hover:bg-primary/5 hover:text-primary rounded-lg transition-colors group">
+                            <i class="ri-settings-3-line mr-3 text-lg group-hover:text-primary"></i>
+                            <span class="font-medium">Settings</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+
+            <div class="p-4 border-t border-gray-100">
+                <a href="../index.html" class="flex items-center px-4 py-3 text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                    <i class="ri-logout-box-line mr-3 text-lg"></i>
+                    <span class="font-medium">Logout</span>
+                </a>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <!-- Mobile Header -->
+            <header class="bg-white border-b border-gray-200 md:hidden p-4 flex items-center justify-between">
+                <div class="flex items-center">
+                    <img src="../skillhub_logo.png" alt="Logo" class="w-8 h-8 mr-2">
+                    <span class="font-bold text-primary">SkillHub</span>
+                </div>
+                <button class="text-gray-600">
+                    <i class="ri-menu-line text-2xl"></i>
+                </button>
+            </header>
+
+            <!-- Content Area -->
+            <main class="flex-1 overflow-y-auto p-4 md:p-8">
+                
+                <!-- Account Section (Profile Completion) -->
+                <div id="section-account" class="max-w-4xl mx-auto">
+                    <div class="mb-8">
+                        <h1 class="text-2xl font-bold text-gray-900">Complete Your Profile</h1>
+                        <p class="text-gray-600 mt-1">Please provide your details to finalize your enrollment.</p>
+                    </div>
+
+                    <!-- Progress Steps -->
+                    <div class="mb-8">
+                        <div class="flex items-center justify-between relative">
+                            <div class="absolute left-0 top-1/2 transform -translate-y-1/2 w-full h-1 bg-gray-200 -z-10"></div>
+                            
+                            <!-- Step 1 -->
+                            <div class="flex flex-col items-center step-indicator active" data-step="1">
+                                <div class="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-bold border-4 border-white shadow-sm transition-colors duration-300">1</div>
+                                <span class="text-xs font-medium mt-2 text-primary">Bio Data</span>
+                            </div>
+                            
+                            <!-- Step 2 -->
+                            <div class="flex flex-col items-center step-indicator" data-step="2">
+                                <div class="w-10 h-10 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center font-bold border-4 border-white shadow-sm transition-colors duration-300">2</div>
+                                <span class="text-xs font-medium mt-2 text-gray-500">Contact</span>
+                            </div>
+                            
+                            <!-- Step 3 -->
+                            <div class="flex flex-col items-center step-indicator" data-step="3">
+                                <div class="w-10 h-10 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center font-bold border-4 border-white shadow-sm transition-colors duration-300">3</div>
+                                <span class="text-xs font-medium mt-2 text-gray-500">Skills</span>
+                            </div>
+                            
+                            <!-- Step 4 -->
+                            <div class="flex flex-col items-center step-indicator" data-step="4">
+                                <div class="w-10 h-10 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center font-bold border-4 border-white shadow-sm transition-colors duration-300">4</div>
+                                <span class="text-xs font-medium mt-2 text-gray-500">Reference</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Form Container -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                        <form id="profileForm" class="p-6 md:p-8">
+                            
+                            <!-- Step 1: Bio Data -->
+                            <div class="form-step" data-step="1">
+                                <h3 class="text-lg font-semibold text-gray-900 mb-6 pb-2 border-b">Bio Data</h3>
+                                
+                                <!-- Full Name Field -->
+                                <div class="mb-6">
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+                                    <div class="relative">
+                                        <input type="text" id="fullnameInput" name="fullname" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none bg-gray-100" readonly>
+                                        <button type="button" id="editNameBtn" class="absolute right-2 top-1/2 transform -translate-y-1/2 text-primary hover:text-green-700 p-1">
+                                            <i class="ri-edit-line text-xl"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Date of Birth</label>
+                                        <input type="date" name="dob" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Gender</label>
+                                        <select name="gender" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none bg-white">
+                                            <option value="">Select Gender</option>
+                                            <option value="male">Male</option>
+                                            <option value="female">Female</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Marital Status</label>
+                                        <select name="marital_status" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none bg-white">
+                                            <option value="">Select Status</option>
+                                            <option value="single">Single</option>
+                                            <option value="married">Married</option>
+                                            <option value="divorced">Divorced</option>
+                                            <option value="widowed">Widowed</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Nationality</label>
+                                        <select id="nationalitySelect" name="nationality_select" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none bg-white">
+                                            <option value="nigerian">Nigerian</option>
+                                            <option value="Others">Others</option>
+                                        </select>
+                                        <input type="text" id="nationalityInput" name="nationality_other" placeholder="Enter Nationality" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none mt-2 hidden">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">State of Origin</label>
+                                        <select id="stateSelect" name="state_origin_select" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none bg-white">
+                                            <option value="">Select State</option>
+                                            <!-- States will be populated by JS -->
+                                            <option value="Others">Others</option>
+                                        </select>
+                                        <input type="text" id="stateInput" name="state_origin_other" placeholder="Enter State" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none mt-2 hidden">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">LGA</label>
+                                        <select id="lgaSelect" name="lga_select" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none bg-white" disabled>
+                                            <option value="">Select LGA</option>
+                                            <!-- LGAs will be populated by JS -->
+                                        </select>
+                                        <input type="text" id="lgaInput" name="lga_other" placeholder="Enter LGA" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none mt-2 hidden">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">NIN Number</label>
+                                        <input type="text" name="nin_number" maxlength="11" placeholder="11-digit NIN" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none">
+                                    </div>
+                                </div>
+
+                                <!-- File Uploads Section -->
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 pt-6 border-t border-gray-100">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Passport Photograph</label>
+                                        <input type="file" id="passportInput" name="passport" accept="image/*" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none bg-white">
+                                        <p class="text-xs text-gray-500 mt-1">Upload a clear face photo (JPG/PNG)</p>
+                                        <div id="passportPreview" class="mt-4 hidden">
+                                            <img src="" alt="Passport Preview" class="w-32 h-32 object-cover rounded-lg border border-gray-200">
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">NIN Document</label>
+                                        <input type="file" id="ninDocInput" name="nin_document" accept="image/*,application/pdf" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none bg-white">
+                                        <p class="text-xs text-gray-500 mt-1">Upload NIN Slip or ID Card (JPG/PNG/PDF)</p>
+                                        <div id="ninDocPreview" class="mt-4 hidden">
+                                            <img src="" alt="NIN Document Preview" class="w-full h-48 object-contain rounded-lg border border-gray-200">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Step 2: Contact Information -->
+                            <div class="form-step hidden" data-step="2">
+                                <h3 class="text-lg font-semibold text-gray-900 mb-6 pb-2 border-b">Contact Information</h3>
+                                <div class="space-y-6">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Residential Address</label>
+                                        <textarea name="address" rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none"></textarea>
+                                    </div>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">City/Town</label>
+                                            <input type="text" name="city" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none">
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">State of Residence</label>
+                                            <input type="text" name="state_residence" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none">
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="pt-4 border-t border-gray-100">
+                                        <h4 class="text-md font-medium text-gray-900 mb-4">Next of Kin</h4>
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+                                                <input type="text" name="nok_name" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none">
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+                                                <input type="tel" name="nok_phone" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none">
+                                            </div>
+                                            <div class="md:col-span-2">
+                                                <label class="block text-sm font-medium text-gray-700 mb-2">Address</label>
+                                                <input type="text" name="nok_address" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Step 3: Skill Information -->
+                            <div class="form-step hidden" data-step="3">
+                                <h3 class="text-lg font-semibold text-gray-900 mb-6 pb-2 border-b">Skill Information</h3>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Highest Qualification</label>
+                                        <select name="qualification" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none bg-white">
+                                            <option value="">Select Qualification</option>
+                                            <option value="ssce">SSCE / WAEC</option>
+                                            <option value="ond">OND / NCE</option>
+                                            <option value="hnd">HND / BSc</option>
+                                            <option value="masters">Masters</option>
+                                            <option value="phd">PhD</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Employment Status</label>
+                                        <select name="employment" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none bg-white">
+                                            <option value="">Select Status</option>
+                                            <option value="student">Student</option>
+                                            <option value="employed">Employed</option>
+                                            <option value="unemployed">Unemployed</option>
+                                            <option value="self_employed">Self Employed</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Program of Interest</label>
+                                        <select name="program" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none bg-white">
+                                            <option value="">Select Program</option>
+                                            <option value="catering">Catering & Food Services</option>
+                                            <option value="ict">ICT & Digital Skills</option>
+                                            <option value="fashion">Fashion Design</option>
+                                            <option value="welding">Welding & Fabrication</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Previous Experience?</label>
+                                        <select name="experience" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none bg-white">
+                                            <option value="no">No Experience</option>
+                                            <option value="beginner">Beginner</option>
+                                            <option value="intermediate">Intermediate</option>
+                                            <option value="advanced">Advanced</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Step 4: Reference Information -->
+                            <div class="form-step hidden" data-step="4">
+                                <h3 class="text-lg font-semibold text-gray-900 mb-6 pb-2 border-b">Reference Information</h3>
+                                <p class="text-sm text-gray-500 mb-6">Please provide details of a referee who can attest to your character.</p>
+                                
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Referee Name</label>
+                                        <input type="text" name="ref_name" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Relationship</label>
+                                        <input type="text" name="ref_relationship" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+                                        <input type="tel" name="ref_phone" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+                                        <input type="email" name="ref_email" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Navigation Buttons -->
+                            <div class="mt-8 flex justify-between pt-6 border-t border-gray-100">
+                                <button type="button" id="prevBtn" class="hidden px-6 py-2.5 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors">
+                                    Previous
+                                </button>
+                                <button type="button" id="nextBtn" class="ml-auto px-6 py-2.5 bg-primary text-white font-medium rounded-lg hover:bg-green-700 transition-colors shadow-sm">
+                                    Save & Next
+                                </button>
+                                <button type="submit" id="submitBtn" class="hidden ml-auto px-6 py-2.5 bg-secondary text-white font-medium rounded-lg hover:bg-orange-600 transition-colors shadow-sm">
+                                    Submit Application
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Other Sections (Placeholders) -->
+                <div id="section-dashboard" class="hidden">
+                    <h1 class="text-2xl font-bold text-gray-900 mb-4">Dashboard Overview</h1>
+                    <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-200 text-center py-20">
+                        <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="ri-dashboard-line text-2xl text-gray-400"></i>
+                        </div>
+                        <h3 class="text-lg font-medium text-gray-900">Welcome to your Dashboard</h3>
+                        <p class="text-gray-500 mt-2">Complete your profile in the Account section to get started.</p>
+                        <button onclick="showSection('account')" class="mt-6 px-6 py-2 bg-primary text-white rounded-lg hover:bg-green-700 transition-colors">
+                            Go to Account
+                        </button>
+                    </div>
+                </div>
+
+                <div id="section-learning" class="hidden">
+                    <h1 class="text-2xl font-bold text-gray-900 mb-4">My Learning</h1>
+                    <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-200 text-center py-20">
+                        <p class="text-gray-500">No courses enrolled yet.</p>
+                    </div>
+                </div>
+
+                <div id="section-settings" class="hidden">
+                    <h1 class="text-2xl font-bold text-gray-900 mb-4">Settings</h1>
+                    <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-200 text-center py-20">
+                        <p class="text-gray-500">Account settings will appear here.</p>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <script>
+        // Section Navigation
+        function showSection(sectionId) {
+            // Hide all sections
+            document.querySelectorAll('[id^="section-"]').forEach(el => el.classList.add('hidden'));
+            
+            // Show target section
+            document.getElementById(`section-${sectionId}`).classList.remove('hidden');
+            
+            // Update sidebar active state
+            document.querySelectorAll('nav a').forEach(el => {
+                el.classList.remove('bg-primary/5', 'text-primary');
+                el.classList.add('text-gray-600');
+                // Reset icons
+                const icon = el.querySelector('i');
+                if(icon) icon.classList.remove('text-primary');
+            });
+
+            // Find the link that calls this function (approximate match)
+            const activeLink = Array.from(document.querySelectorAll('nav a')).find(el => el.getAttribute('onclick').includes(sectionId));
+            if (activeLink) {
+                activeLink.classList.remove('text-gray-600');
+                activeLink.classList.add('bg-primary/5', 'text-primary');
+                const icon = activeLink.querySelector('i');
+                if(icon) icon.classList.add('text-primary');
+            }
+        }
+
+        // Multi-step Form Logic
+        document.addEventListener('DOMContentLoaded', function() {
+            // Nigerian States and LGAs Data
+            const nigeriaData = {
+                "Abia": ["Aba North", "Aba South", "Arochukwu", "Bende", "Ikwuano", "Isiala Ngwa North", "Isiala Ngwa South", "Isuikwuato", "Obi Ngwa", "Ohafia", "Osisioma", "Ugwunagbo", "Ukwa East", "Ukwa West", "Umuahia North", "Umuahia South", "Umu Nneochi"],
+                "Adamawa": ["Demsa", "Fufure", "Ganye", "Gayuk", "Gombi", "Grie", "Hong", "Jada", "Lamurde", "Madagali", "Maiha", "Mayo Belwa", "Michika", "Mubi North", "Mubi South", "Numan", "Shelleng", "Song", "Toungo", "Yola North", "Yola South"],
+                "Akwa Ibom": ["Abak", "Eastern Obolo", "Eket", "Esit Eket", "Essien Udim", "Etim Ekpo", "Etinan", "Ibeno", "Ibesikpo Asutan", "Ibiono-Ibom", "Ika", "Ikono", "Ikot Abasi", "Ikot Ekpene", "Ini", "Itu", "Mbo", "Mkpat-Enin", "Nsit-Atai", "Nsit-Ibom", "Nsit-Ubium", "Obot Akara", "Okobo", "Onna", "Oron", "Oruk Anam", "Udung-Uko", "Ukanafun", "Uruan", "Urue-Offong/Oruko", "Uyo"],
+                "Anambra": ["Aguata", "Anambra East", "Anambra West", "Anaocha", "Awka North", "Awka South", "Ayamelum", "Dunukofia", "Ekwusigo", "Idemili North", "Idemili South", "Ihiala", "Njikoka", "Nnewi North", "Nnewi South", "Ogbaru", "Onitsha North", "Onitsha South", "Orumba North", "Orumba South", "Oyi"],
+                "Bauchi": ["Alkaleri", "Bauchi", "Bogoro", "Damban", "Darazo", "Dass", "Gamawa", "Ganjuwa", "Giade", "Itas/Gadau", "Jama'are", "Katagum", "Kirfi", "Misau", "Ningi", "Shira", "Tafawa Balewa", "Toro", "Warji", "Zaki"],
+                "Bayelsa": ["Brass", "Ekeremor", "Kolokuma/Opokuma", "Nembe", "Ogbia", "Sagbama", "Southern Ijaw", "Yenagoa"],
+                "Benue": ["Ado", "Agatu", "Apa", "Buruku", "Gboko", "Guma", "Gwer East", "Gwer West", "Katsina-Ala", "Konshisha", "Kwande", "Logo", "Makurdi", "Obi", "Ogbadibo", "Ohimini", "Oju", "Okpokwu", "Otukpo", "Tarka", "Ukum", "Ushongo", "Vandeikya"],
+                "Borno": ["Abadam", "Askira/Uba", "Bama", "Bayo", "Biu", "Chibok", "Damboa", "Dikwa", "Gubio", "Guzamala", "Gwoza", "Hawul", "Jere", "Kaga", "Kala/Balge", "Konduga", "Kukawa", "Kwaya Kusar", "Mafa", "Magumeri", "Maiduguri", "Marte", "Mobbar", "Monguno", "Ngala", "Nganzai", "Shani"],
+                "Cross River": ["Abi", "Akamkpa", "Akpabuyo", "Bakassi", "Bekwarra", "Biase", "Boki", "Calabar Municipal", "Calabar South", "Etung", "Ikom", "Obanliku", "Obubra", "Obudu", "Odukpani", "Ogoja", "Yakuur", "Yala"],
+                "Delta": ["Aniocha North", "Aniocha South", "Bomadi", "Burutu", "Ethiope East", "Ethiope West", "Ika North East", "Ika South", "Isoko North", "Isoko South", "Ndokwa East", "Ndokwa West", "Okpe", "Oshimili North", "Oshimili South", "Patani", "Sapele", "Udu", "Ughelli North", "Ughelli South", "Ukwuani", "Uvwie", "Warri North", "Warri South", "Warri South West"],
+                "Ebonyi": ["Abakaliki", "Afikpo North", "Afikpo South", "Ebonyi", "Ezza North", "Ezza South", "Ikwo", "Ishielu", "Ivo", "Izzi", "Ohaozara", "Ohaukwu", "Onicha"],
+                "Edo": ["Akoko-Edo", "Egor", "Esan Central", "Esan North-East", "Esan South-East", "Esan West", "Etsako Central", "Etsako East", "Etsako West", "Igueben", "Ikpoba Okha", "Oredo", "Orhionmwon", "Ovia North-East", "Ovia South-West", "Owan East", "Owan West", "Uhunmwonde"],
+                "Ekiti": ["Ado Ekiti", "Efon", "Ekiti East", "Ekiti South-West", "Ekiti West", "Emure", "Gbonyin", "Ido Osi", "Ijero", "Ikere", "Ikole", "Ilejemeje", "Irepodun/Ifelodun", "Ise/Orun", "Moba", "Oye"],
+                "Enugu": ["Aninri", "Awgu", "Enugu East", "Enugu North", "Enugu South", "Ezeagu", "Igbo Etiti", "Igbo Eze North", "Igbo Eze South", "Isi Uzo", "Nkanu East", "Nkanu West", "Nsukka", "Oji River", "Udenu", "Udi", "Uzo Uwani"],
+                "FCT": ["Abaji", "Bwari", "Gwagwalada", "Kuje", "Kwali", "Municipal Area Council"],
+                "Gombe": ["Akko", "Balanga", "Billiri", "Dukku", "Funakaye", "Gombe", "Kaltungo", "Kwami", "Nafada", "Shongom", "Yamaltu/Deba"],
+                "Imo": ["Aboh Mbaise", "Ahiazu Mbaise", "Ehime Mbano", "Ezinihitte", "Ideato North", "Ideato South", "Ihitte/Uboma", "Ikeduru", "Isiala Mbano", "Isu", "Mbaitoli", "Ngor Okpala", "Njaba", "Nkwerre", "Nwangele", "Obowo", "Oguta", "Ohaji/Egbema", "Okigwe", "Orlu", "Orsu", "Oru East", "Oru West", "Owerri Municipal", "Owerri North", "Owerri West"],
+                "Jigawa": ["Auyo", "Babura", "Biriniwa", "Birnin Kudu", "Buji", "Dutse", "Gagarawa", "Garki", "Gumel", "Guri", "Gwaram", "Gwiwa", "Hadejia", "Jahun", "Kafin Hausa", "Kaugama", "Kazaure", "Kiri Kasama", "Kiyawa", "Maigatari", "Malam Madori", "Miga", "Ringim", "Roni", "Sule Tankarkar", "Taura", "Yankwashi"],
+                "Kaduna": ["Birnin Gwari", "Chikun", "Giwa", "Igabi", "Ikara", "Jaba", "Jema'a", "Kachia", "Kaduna North", "Kaduna South", "Kagarko", "Kajuru", "Kaura", "Kauru", "Kubau", "Kudan", "Lere", "Makarfi", "Sabon Gari", "Sanga", "Soba", "Zangon Kataf", "Zaria"],
+                "Kano": ["Ajingi", "Albasu", "Bagwai", "Bebeji", "Bichi", "Bunkure", "Dala", "Dambatta", "Dawakin Kudu", "Dawakin Tofa", "Doguwa", "Fagge", "Gabasawa", "Garko", "Garun Mallam", "Gaya", "Gezawa", "Gwale", "Gwarzo", "Kabo", "Kano Municipal", "Karaye", "Kibiya", "Kiru", "Kumbotso", "Kunchi", "Kura", "Madobi", "Makoda", "Minjibir", "Nasarawa", "Rano", "Rimin Gado", "Rogo", "Shanono", "Sumaila", "Takai", "Tarauni", "Tofa", "Tsanyawa", "Tudun Wada", "Ungogo", "Warawa", "Wudil"],
+                "Katsina": ["Bakori", "Batagarawa", "Batsari", "Baure", "Bindawa", "Charanchi", "Dandume", "Danja", "Dan Musa", "Daura", "Dutsi", "Dutsin Ma", "Faskari", "Funtua", "Ingawa", "Jibia", "Kafur", "Kaita", "Kankara", "Kankia", "Katsina", "Kurfi", "Kusada", "Mai'Adua", "Malumfashi", "Mani", "Mashi", "Matazu", "Musawa", "Rimi", "Sabuwa", "Safana", "Sandamu", "Zango"],
+                "Kebbi": ["Aleiro", "Arewa Dandi", "Argungu", "Augie", "Bagudo", "Birnin Kebbi", "Bunza", "Dandi", "Fakai", "Gwandu", "Jega", "Kalgo", "Koko/Besse", "Maiyama", "Ngaski", "Sakaba", "Shanga", "Suru", "Wasagu/Danko", "Yauri", "Zuru"],
+                "Kogi": ["Adavi", "Ajaokuta", "Ankpa", "Bassa", "Dekina", "Ibaji", "Idah", "Igalamela Odolu", "Ijumu", "Kabba/Bunu", "Kogi", "Lokoja", "Mopa Muro", "Ofu", "Ogori/Magongo", "Okehi", "Okene", "Olamaboro", "Omala", "Yagba East", "Yagba West"],
+                "Kwara": ["Asa", "Baruten", "Edu", "Ekiti", "Ifelodun", "Ilorin East", "Ilorin South", "Ilorin West", "Irepodun", "Isin", "Kaiama", "Moro", "Offa", "Oke Ero", "Oyun", "Pategi"],
+                "Lagos": ["Agege", "Ajeromi-Ifelodun", "Alimosho", "Amuwo-Odofin", "Apapa", "Badagry", "Epe", "Eti Osa", "Ibeju-Lekki", "Ifako-Ijaiye", "Ikeja", "Ikorodu", "Kosofe", "Lagos Island", "Lagos Mainland", "Mushin", "Ojo", "Oshodi-Isolo", "Shomolu", "Surulere"],
+                "Nasarawa": ["Akwanga", "Awe", "Doma", "Karu", "Keana", "Keffi", "Kokona", "Lafia", "Nasarawa", "Nasarawa Egon", "Obi", "Toto", "Wamba"],
+                "Niger": ["Agaie", "Agwara", "Bida", "Borgu", "Bosso", "Chanchaga", "Edati", "Gbako", "Gurara", "Katcha", "Kontagora", "Lapai", "Lavun", "Magama", "Mariga", "Mashegu", "Mokwa", "Moya", "Paikoro", "Rafi", "Rijau", "Shiroro", "Suleja", "Tafa", "Wushishi"],
+                "Ogun": ["Abeokuta North", "Abeokuta South", "Ado-Odo/Ota", "Egbado North", "Egbado South", "Ewekoro", "Ifo", "Ijebu East", "Ijebu North", "Ijebu North East", "Ijebu Ode", "Ikenne", "Imeko Afon", "Ipokia", "Obafemi Owode", "Odeda", "Odogbolu", "Ogun Waterside", "Remo North", "Shagamu"],
+                "Ondo": ["Akoko North-East", "Akoko North-West", "Akoko South-East", "Akoko South-West", "Akure North", "Akure South", "Ese Odo", "Idanre", "Ifedore", "Ilaje", "Ile Oluji/Okeigbo", "Irele", "Odigbo", "Okitipupa", "Ondo East", "Ondo West", "Ose", "Owo"],
+                "Osun": ["Atakunmosa East", "Atakunmosa West", "Ayedaade", "Ayedire", "Boluwaduro", "Boripe", "Ede North", "Ede South", "Egbedore", "Ejigbo", "Ife Central", "Ife East", "Ife North", "Ife South", "Ifedayo", "Ifelodun", "Ila", "Ilesa East", "Ilesa West", "Irepodun", "Irewole", "Isokan", "Iwo", "Obokun", "Odo Otin", "Ola Oluwa", "Olorunda", "Oriade", "Orolu", "Osogbo"],
+                "Oyo": ["Afijio", "Akinyele", "Atiba", "Atisbo", "Egbeda", "Ibadan North", "Ibadan North-East", "Ibadan North-West", "Ibadan South-East", "Ibadan South-West", "Ibarapa Central", "Ibarapa East", "Ibarapa North", "Ido", "Irepo", "Iseyin", "Itesiwaju", "Iwajowa", "Kajola", "Lagelu", "Ogbomosho North", "Ogbomosho South", "Ogo Oluwa", "Olorunsogo", "Oluyole", "Ona Ara", "Orelope", "Ori Ire", "Oyo East", "Oyo West", "Saki East", "Saki West", "Surulere"],
+                "Plateau": ["Barkin Ladi", "Bassa", "Bokkos", "Jos East", "Jos North", "Jos South", "Kanam", "Kanke", "Langtang North", "Langtang South", "Mangu", "Mikang", "Pankshin", "Qua'an Pan", "Riyom", "Shendam", "Wase"],
+                "Rivers": ["Abua/Odual", "Ahoada East", "Ahoada West", "Akuku-Toru", "Andoni", "Asari-Toru", "Bonny", "Degema", "Eleme", "Emohua", "Etche", "Gokana", "Ikwerre", "Khana", "Obio/Akpor", "Ogba/Egbema/Ndoni", "Ogu/Bolo", "Okrika", "Omuma", "Opobo/Nkoro", "Oyigbo", "Port Harcourt", "Tai"],
+                "Sokoto": ["Binji", "Bodinga", "Dange Shuni", "Gada", "Goronyo", "Gudu", "Gwadabawa", "Illela", "Isa", "Kebbe", "Kware", "Rabah", "Sabon Birni", "Shagari", "Silame", "Sokoto North", "Sokoto South", "Tambuwal", "Tangaza", "Tureta", "Wamakko", "Wurno", "Yabo"],
+                "Taraba": ["Ardo Kola", "Bali", "Donga", "Gashaka", "Gassol", "Ibi", "Jalingo", "Karim Lamido", "Kurmi", "Lau", "Sardauna", "Takum", "Ussa", "Wukari", "Yorro", "Zing"],
+                "Yobe": ["Bade", "Bursari", "Damaturu", "Fika", "Fune", "Geidam", "Gujba", "Gulani", "Jakusko", "Karasuwa", "Machina", "Nangere", "Nguru", "Potiskum", "Tarmuwa", "Yunusari", "Yusufari"],
+                "Zamfara": ["Anka", "Bakura", "Birnin Magaji/Kiyaw", "Bukkuyum", "Bungudu", "Chafe", "Gummi", "Gusau", "Kaura Namoda", "Maradun", "Maru", "Shinkafi", "Talata Mafara", "Zurmi"]
+            };
+
+            const stateSelect = document.getElementById('stateSelect');
+            const stateInput = document.getElementById('stateInput');
+            const lgaSelect = document.getElementById('lgaSelect');
+            const lgaInput = document.getElementById('lgaInput');
+            const nationalitySelect = document.getElementById('nationalitySelect');
+            const nationalityInput = document.getElementById('nationalityInput');
+            const fullnameInput = document.getElementById('fullnameInput');
+            const editNameBtn = document.getElementById('editNameBtn');
+            const passportInput = document.getElementById('passportInput');
+            const passportPreview = document.getElementById('passportPreview');
+            const ninDocInput = document.getElementById('ninDocInput');
+            const ninDocPreview = document.getElementById('ninDocPreview');
+
+            // Edit Name Handler
+            editNameBtn.addEventListener('click', function() {
+                if (fullnameInput.hasAttribute('readonly')) {
+                    fullnameInput.removeAttribute('readonly');
+                    fullnameInput.classList.remove('bg-gray-100');
+                    fullnameInput.classList.add('bg-white');
+                    fullnameInput.focus();
+                    this.innerHTML = '<i class="ri-save-line text-xl"></i>';
+                } else {
+                    fullnameInput.setAttribute('readonly', true);
+                    fullnameInput.classList.add('bg-gray-100');
+                    fullnameInput.classList.remove('bg-white');
+                    this.innerHTML = '<i class="ri-edit-line text-xl"></i>';
+                }
+            });
+
+            // Image Preview Handler
+            function handleImagePreview(input, previewContainer) {
+                input.addEventListener('change', function() {
+                    const file = this.files[0];
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            const img = previewContainer.querySelector('img');
+                            img.src = e.target.result;
+                            previewContainer.classList.remove('hidden');
+                        }
+                        reader.readAsDataURL(file);
+                    } else {
+                        previewContainer.classList.add('hidden');
+                    }
+                });
+            }
+
+            handleImagePreview(passportInput, passportPreview);
+            handleImagePreview(ninDocInput, ninDocPreview);
+
+            // Fetch User Profile Data
+            async function fetchProfile() {
+                const token = localStorage.getItem('token');
+                if (!token) return;
+
+                try {
+                    const response = await fetch('http://localhost:5000/api/profile/me', {
+                        headers: { 'x-auth-token': token }
+                    });
+                    const user = await response.json();
+                    
+                    if (user) {
+                        if (user.fullname) fullnameInput.value = user.fullname;
+                        // Populate other fields if they exist (optional for now as this is mainly for pre-filling the name)
+                    }
+                } catch (error) {
+                    console.error('Error fetching profile:', error);
+                }
+            }
+            
+            fetchProfile();
+
+            // Nationality Change Handler
+            nationalitySelect.addEventListener('change', function() {
+                if (this.value === 'Others') {
+                    nationalityInput.classList.remove('hidden');
+                } else {
+                    nationalityInput.classList.add('hidden');
+                }
+            });
+
+            // Populate States
+            Object.keys(nigeriaData).sort().forEach(state => {
+                const option = document.createElement('option');
+                option.value = state;
+                option.textContent = state;
+                stateSelect.insertBefore(option, stateSelect.lastElementChild); // Insert before "Others"
+            });
+
+            // State Change Handler
+            stateSelect.addEventListener('change', function() {
+                const selectedState = this.value;
+                
+                // Reset LGA
+                lgaSelect.innerHTML = '<option value="">Select LGA</option><option value="Others">Others</option>';
+                lgaSelect.disabled = true;
+                lgaInput.classList.add('hidden');
+                
+                if (selectedState === 'Others') {
+                    stateInput.classList.remove('hidden');
+                    lgaSelect.disabled = false; // Allow selecting "Others" for LGA even if State is Others
+                } else {
+                    stateInput.classList.add('hidden');
+                    if (selectedState && nigeriaData[selectedState]) {
+                        lgaSelect.disabled = false;
+                        nigeriaData[selectedState].sort().forEach(lga => {
+                            const option = document.createElement('option');
+                            option.value = lga;
+                            option.textContent = lga;
+                            lgaSelect.insertBefore(option, lgaSelect.lastElementChild);
+                        });
+                    }
+                }
+            });
+
+            // LGA Change Handler
+            lgaSelect.addEventListener('change', function() {
+                if (this.value === 'Others') {
+                    lgaInput.classList.remove('hidden');
+                } else {
+                    lgaInput.classList.add('hidden');
+                }
+            });
+
+            let currentStep = 1;
+            const totalSteps = 4;
+            
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            const submitBtn = document.getElementById('submitBtn');
+            const form = document.getElementById('profileForm');
+
+            function updateFormSteps() {
+                // Show/Hide Steps
+                document.querySelectorAll('.form-step').forEach(step => {
+                    if(parseInt(step.dataset.step) === currentStep) {
+                        step.classList.remove('hidden');
+                    } else {
+                        step.classList.add('hidden');
+                    }
+                });
+
+                // Update Indicators
+                document.querySelectorAll('.step-indicator').forEach(indicator => {
+                    const stepNum = parseInt(indicator.dataset.step);
+                    const circle = indicator.querySelector('div');
+                    const label = indicator.querySelector('span');
+
+                    if (stepNum === currentStep) {
+                        // Active
+                        circle.classList.remove('bg-gray-200', 'text-gray-500', 'bg-green-600', 'text-white');
+                        circle.classList.add('bg-primary', 'text-white');
+                        label.classList.remove('text-gray-500');
+                        label.classList.add('text-primary');
+                    } else if (stepNum < currentStep) {
+                        // Completed
+                        circle.classList.remove('bg-gray-200', 'text-gray-500', 'bg-primary');
+                        circle.classList.add('bg-green-600', 'text-white');
+                        circle.innerHTML = '<i class="ri-check-line"></i>';
+                        label.classList.remove('text-gray-500');
+                        label.classList.add('text-green-600');
+                    } else {
+                        // Pending
+                        circle.classList.remove('bg-primary', 'text-white', 'bg-green-600');
+                        circle.classList.add('bg-gray-200', 'text-gray-500');
+                        circle.textContent = stepNum;
+                        label.classList.remove('text-primary', 'text-green-600');
+                        label.classList.add('text-gray-500');
+                    }
+                });
+
+                // Button Visibility
+                if (currentStep === 1) {
+                    prevBtn.classList.add('hidden');
+                } else {
+                    prevBtn.classList.remove('hidden');
+                }
+
+                if (currentStep === totalSteps) {
+                    nextBtn.classList.add('hidden');
+                    submitBtn.classList.remove('hidden');
+                } else {
+                    nextBtn.classList.remove('hidden');
+                    submitBtn.classList.add('hidden');
+                }
+            }
+
+            // Next Button Click
+            nextBtn.addEventListener('click', function() {
+                if (validateStep(currentStep)) {
+                    // Simulate Save
+                    console.log(`Saving data for step ${currentStep}...`);
+                    
+                    if (currentStep < totalSteps) {
+                        currentStep++;
+                        updateFormSteps();
+                    }
+                }
+            });
+
+            // Previous Button Click
+            prevBtn.addEventListener('click', function() {
+                if (currentStep > 1) {
+                    currentStep--;
+                    updateFormSteps();
+                }
+            });
+
+            // Form Submit
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                if (validateStep(currentStep)) {
+                    // Collect all data using FormData
+                    const formData = new FormData(form);
+                    
+                    // Handle Dynamic Fields Logic
+                    // We need to manually adjust the FormData or ensure the backend handles the _select vs _other logic.
+                    // Since we are sending FormData directly for file uploads, we can't easily "delete" keys like in a plain object without creating a new FormData.
+                    // A better approach is to append the final values to the FormData if they are missing or incorrect, 
+                    // BUT since we have files, we MUST use FormData.
+                    
+                    // Let's fix the values in the FormData object
+                    if (formData.get('nationality_select') === 'Others') {
+                        formData.set('nationality', formData.get('nationality_other'));
+                    } else {
+                        formData.set('nationality', formData.get('nationality_select'));
+                    }
+
+                    if (formData.get('state_origin_select') === 'Others') {
+                        formData.set('state_origin', formData.get('state_origin_other'));
+                    } else {
+                        formData.set('state_origin', formData.get('state_origin_select'));
+                    }
+                    
+                    if (formData.get('lga_select') === 'Others') {
+                        formData.set('lga', formData.get('lga_other'));
+                    } else {
+                        formData.set('lga', formData.get('lga_select'));
+                    }
+                    
+                    // Remove temporary fields (optional, backend can just ignore them)
+                    formData.delete('nationality_select');
+                    formData.delete('nationality_other');
+                    formData.delete('state_origin_select');
+                    formData.delete('state_origin_other');
+                    formData.delete('lga_select');
+                    formData.delete('lga_other');
+
+                    console.log('Submitting FormData...');
+                    
+                    const token = localStorage.getItem('token');
+                    if (!token) {
+                        alert('You are not logged in. Please login again.');
+                        window.location.href = 'login2.html';
+                        return;
+                    }
+
+                    try {
+                        submitBtn.textContent = 'Submitting...';
+                        submitBtn.disabled = true;
+
+                        const response = await fetch('http://localhost:5000/api/profile/update', {
+                            method: 'PUT',
+                            headers: {
+                                // 'Content-Type': 'multipart/form-data', // DO NOT SET THIS MANUALLY with fetch + FormData
+                                'x-auth-token': token
+                            },
+                            body: formData
+                        });
+
+                        const result = await response.json();
+
+                        if (response.ok) {
+                            alert('Profile submitted successfully! We will review your application.');
+                            showSection('dashboard');
+                        } else {
+                            alert(result.message || 'Error updating profile');
+                        }
+                    } catch (error) {
+                        console.error('Error:', error);
+                        alert('Network error. Please try again.');
+                    } finally {
+                        submitBtn.textContent = 'Submit Application';
+                        submitBtn.disabled = false;
+                    }
+                }
+            });
+
+            // Simple Validation
+            function validateStep(step) {
+                const currentStepEl = document.querySelector(`.form-step[data-step="${step}"]`);
+                const inputs = currentStepEl.querySelectorAll('input, select, textarea');
+                let isValid = true;
+
+                inputs.forEach(input => {
+                    if (input.hasAttribute('required') && !input.value.trim()) {
+                        isValid = false;
+                        input.classList.add('border-red-500');
+                    } else {
+                        input.classList.remove('border-red-500');
+                    }
+                });
+
+                if (!isValid) {
+                    alert('Please fill in all required fields.');
+                }
+                
+                return true; // For now, allowing progression for demo purposes
+            }
+
+            // Initialize
+            updateFormSteps();
+        });
+    </script>
+</body>
+</html>

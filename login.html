@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login - Docerad SkillHub</title>
+    <script src="https://cdn.tailwindcss.com/3.4.16"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css"
+    />
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: "#00A86B",
+              secondary: "#FF8C00",
+            },
+            borderRadius: {
+              none: "0px",
+              sm: "4px",
+              DEFAULT: "8px",
+              md: "12px",
+              lg: "16px",
+              xl: "20px",
+              "2xl": "24px",
+              "3xl": "32px",
+              full: "9999px",
+              button: "8px",
+            },
+          },
+        },
+      };
+    </script>
+  </head>
+  <body
+    class="min-h-screen flex items-center justify-center bg-cover bg-center bg-no-repeat"
+    style="
+      background-image: linear-gradient(to bottom right, rgba(0, 168, 107, 0.8), rgba(255, 140, 0, 0.8)), url('images/entrepreneurship_bg.png');
+      background-attachment: fixed;
+    "
+  >
+    <div class="max-w-md w-full mx-4">
+      <!-- Logo and Header -->
+      <div class="text-center mb-8">
+        <a
+          href="index.html"
+          class="inline-block flex flex-col items-center"
+        >
+          <img
+            src="skillhub_logo.png"
+            alt="SkillHub Logo"
+            class="w-16 h-16 object-contain mb-2"
+          />
+          <div class="font-['Montserrat'] text-3xl text-white drop-shadow-md mb-2">
+            Docerad SkillHub
+          </div>
+        </a>
+        <p class="text-white/90 drop-shadow-sm">Welcome back! Please login to your account.</p>
+      </div>
+
+      <!-- Login Form Card -->
+      <div class="bg-white rounded-lg shadow-lg p-8">
+        <h2 class="text-2xl font-bold text-gray-900 mb-6 text-center">Login</h2>
+
+        <form id="loginForm" class="space-y-6">
+          <!-- Email Field -->
+          <div>
+            <label
+              for="email"
+              class="block text-sm font-medium text-gray-700 mb-2"
+              >Email Address</label
+            >
+            <div class="relative">
+              <div
+                class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
+              >
+                <i class="ri-mail-line text-gray-400"></i>
+              </div>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                required
+                class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-colors"
+                placeholder="Enter your email"
+              />
+            </div>
+          </div>
+
+          <!-- Password Field -->
+          <div>
+            <label
+              for="password"
+              class="block text-sm font-medium text-gray-700 mb-2"
+              >Password</label
+            >
+            <div class="relative">
+              <div
+                class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
+              >
+                <i class="ri-lock-line text-gray-400"></i>
+              </div>
+              <input
+                type="password"
+                id="password"
+                name="password"
+                required
+                class="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-colors"
+                placeholder="Enter your password"
+              />
+              <button
+                type="button"
+                onclick="togglePassword('password')"
+                class="absolute inset-y-0 right-0 pr-3 flex items-center"
+              >
+                <i
+                  id="password-icon"
+                  class="ri-eye-off-line text-gray-400 hover:text-gray-600"
+                ></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Remember Me & Forgot Password -->
+          <div class="flex items-center justify-between">
+            <div class="flex items-center">
+              <input
+                type="checkbox"
+                id="remember"
+                name="remember"
+                class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+              />
+              <label for="remember" class="ml-2 block text-sm text-gray-700"
+                >Remember me</label
+              >
+            </div>
+            <a
+              href="Forgotpass.html"
+              class="text-sm text-primary hover:text-green-700 transition-colors"
+              >Forgot password?</a
+            >
+          </div>
+
+          <!-- Login Button -->
+          <button
+            type="submit"
+            class="w-full bg-primary text-white py-3 px-4 rounded-lg font-semibold hover:bg-green-700 transition-colors"
+          >
+            Login
+          </button>
+        </form>
+
+        <!-- Divider -->
+        <div class="my-6 flex items-center">
+          <div class="flex-1 border-t border-gray-300"></div>
+          <span class="px-4 text-sm text-gray-500">or</span>
+          <div class="flex-1 border-t border-gray-300"></div>
+        </div>
+
+        <!-- Sign Up Link -->
+        <p class="text-center text-gray-600">
+          Don't have an account?
+          <a
+            href="sign.html"
+            class="text-primary font-semibold hover:text-green-700 transition-colors"
+            >Sign up</a
+          >
+        </p>
+      </div>
+
+      <!-- Back to Home -->
+      <div class="text-center mt-6">
+        <a
+          href="index.html"
+          class="text-gray-600 hover:text-primary transition-colors inline-flex items-center"
+        >
+          <i class="ri-arrow-left-line mr-2"></i>
+          Back to Home
+        </a>
+      </div>
+    </div>
+
+    <script>
+      function togglePassword(fieldId) {
+        const field = document.getElementById(fieldId);
+        const icon = document.getElementById(fieldId + "-icon");
+
+        if (field.type === "password") {
+          field.type = "text";
+          icon.className = "ri-eye-line text-gray-400 hover:text-gray-600";
+        } else {
+          field.type = "password";
+          icon.className = "ri-eye-off-line text-gray-400 hover:text-gray-600";
+        }
+      }
+
+      document
+        .getElementById("loginForm")
+        .addEventListener("submit", async function (e) {
+          e.preventDefault();
+
+          const email = document.getElementById("email").value;
+          const password = document.getElementById("password").value;
+          const submitBtn = this.querySelector('button[type="submit"]');
+          const originalBtnText = submitBtn.textContent;
+
+          try {
+            submitBtn.textContent = "Logging in...";
+            submitBtn.disabled = true;
+
+            const response = await fetch(
+              "http://localhost:5000/api/auth/login",
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, password }),
+              }
+            );
+
+            const data = await response.json();
+
+            if (!response.ok) {
+              throw new Error(data.message || "Login failed");
+            }
+
+            // Save token
+            localStorage.setItem("token", data.token);
+
+            // Redirect based on role
+            if (data.role === "admin") {
+              window.location.href = "admin-dashboard.html";
+            } else {
+              window.location.href = "student-dashboard.html";
+            }
+          } catch (error) {
+            console.error("Error:", error);
+            alert(error.message);
+            submitBtn.textContent = originalBtnText;
+            submitBtn.disabled = false;
+          }
+        });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Training Programs - SkillHub Nigeria</title>
+<script src="https://cdn.tailwindcss.com/3.4.16"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css">
+<script>
+tailwind.config = {
+theme: {
+extend: {
+colors: {
+primary: '#00A86B',
+secondary: '#FF8C00'
+},
+borderRadius: {
+'none': '0px',
+'sm': '4px',
+DEFAULT: '8px',
+'md': '12px',
+'lg': '16px',
+'xl': '20px',
+'2xl': '24px',
+'3xl': '32px',
+'full': '9999px',
+'button': '8px'
+}
+}
+}
+}
+</script>
+<!-- Course Details Modal copied from index_updated_with_modal.html (image removed as requested) -->
+<div id="courseModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+  <div class="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto p-6 relative">
+    <button onclick="closeModal()" class="absolute top-3 right-4 text-gray-500 hover:text-black text-2xl">&times;</button>
+    <h2 id="modalTitle" class="text-2xl font-bold text-gray-800 mb-2">Starting a Small Business</h2>
+    <p id="modalInstructor" class="text-blue-600 mb-4">Instructor: Dr. Sarah Mitchell</p>
+    <!-- image intentionally removed per request -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div>
+  <h3 class="text-lg md:text-xl font-bold mb-3"><strong>Course Information</strong></h3>
+        <ul id="modalInfo" class="text-sm space-y-1">
+          <li><strong>Duration:</strong> 8 weeks</li>
+          <li><strong>Format:</strong> Online + Live Sessions</li>
+        </ul>
+        <br>
+        <div>
+          <h3 class="font-semibold mb-2"><strong>Course Description</strong></h3>
+          <p id="modalDesc" class="text-sm mb-2">Comprehensive foundation course covering all aspects of launching and managing a small business from ideation to operations.</p>
+          <p class="text-sm"><strong>Certification:</strong> Certificate of Completion</p><br>
+          <p class="text-base md:text-lg font-semibold"><strong>Materials Included:</strong> 
+          <ul>
+            <li>Course handbook (PDF) </li>
+            <li>visual Learning (Video)</li>
+            </ul>
+          </p>
+        </div>
+      </div>
+      <div class="space-y-2">
+          <h3 class="text-lg md:text-xl font-bold mb-3">Learning Materials</h3>
+          <div class="flex space-x-2">
+            <a href="https://youtu.be/zwVrHfgcKhs?si=TCa5C20ER1WsLM6L" target="_blank" rel="noopener" class="w-28 md:w-32 text-center border border-primary text-primary px-4 py-2 rounded hover:bg-primary hover:text-white transition inline-flex items-center justify-center">Watch</a>
+            <p>Shielded Metal Arc Welding </p>
+            
+          </div>
+          <div class="flex space-x-2">
+            <a href="https://youtu.be/NlOihxByeus?si=sf2e7VXhcit0clCR" target="_blank" rel="noopener" aria-label="Watch course video (opens in new tab)" class="w-24 md:w-32 text-center border border-primary text-primary px-4 py-2 rounded hover:bg-primary hover:text-white transition inline-flex items-center justify-center">Watch</a>
+            <p>MIG/Gas Metal Arc Welding</p>
+          </div>
+          <hr class="h-2 bg-gray-200 border-0 my-4" />
+          <div class="flex space-x-2">
+          <a href="SHEILDED METAL ARC WELDING (SMAW).pdf" target="_blank" rel="noopener noreferrer" download="SHEILDED METAL ARC WELDING (SMAW).pdf" class="w-28 md:w-32 text-center border border-primary text-primary px-4 py-2 rounded hover:bg-primary hover:text-white transition inline-flex items-center justify-center">Download</a>
+          <p>Shielded Metal Arc Welding (SMAW)</p>
+          </div>
+          <div class="flex space-x-2">
+            <a href="(GMAW) GAS METAL ARC WELDING(MIG_MAG).pdf" target="_blank" rel="noopener noreferrer" download="(GMAW) GAS METAL ARC WELDING(MIG_MAG).pdf" aria-label="Download MIG/Gas Metal Arc Welding PDF (opens in new tab)" class="w-28 md:w-32 text-center border border-primary text-primary px-4 py-2 rounded hover:bg-primary hover:text-white transition inline-flex items-center justify-center">Download</a>
+          <p>MIG/Gas Metal Arc Welding</p>
+          </div>
+      </div>
+    </div>
+ 
+      <!--
+    <div class="mt-6">
+      <h3 class="font-semibold mb-3">Curriculum Outline</h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="flex items-center space-x-2 bg-gray-100 p-3 rounded">
+          <span class="bg-blue-600 text-white rounded-full w-6 h-6 text-sm flex items-center justify-center">1</span>
+          <span class="text-sm">Business Idea Generation & Validation</span>
+        </div>
+        <div class="flex items-center space-x-2 bg-gray-100 p-3 rounded">
+          <span class="bg-blue-600 text-white rounded-full w-6 h-6 text-sm flex items-center justify-center">2</span>
+          <span class="text-sm">Market Research & Analysis</span>
+        </div>
+        <div class="flex items-center space-x-2 bg-gray-100 p-3 rounded">
+          <span class="bg-blue-600 text-white rounded-full w-6 h-6 text-sm flex items-center justify-center">3</span>
+          <span class="text-sm">Business Model Development</span>
+        </div>
+        <div class="flex items-center space-x-2 bg-gray-100 p-3 rounded">
+          <span class="bg-blue-600 text-white rounded-full w-6 h-6 text-sm flex items-center justify-center">4</span>
+          <span class="text-sm">Legal Structure & Registration</span>
+        </div>
+      </div>
+    </div>
+    <!-->
+  </div>
+</div>
+
+<script>
+function openModal() {
+  document.getElementById('courseModal').classList.remove('hidden');
+}
+function closeModal() {
+  document.getElementById('courseModal').classList.add('hidden');
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  // Attach open behavior to all View Details buttons
+  document.querySelectorAll('button').forEach(btn => {
+    if (btn.textContent && btn.textContent.trim() === 'View Details') {
+      // apply same classes as in index_updated_with_modal.html
+      btn.className = 'border border-green-600 text-green-600 px-4 py-2 rounded hover:bg-green-600 hover:text-white transition';
+      btn.addEventListener('click', function() {
+        // populate modal fields from nearest card if possible
+        const card = btn.closest('.bg-white');
+        if (card) {
+          const title = card.querySelector('h3')?.textContent || document.getElementById('modalTitle').textContent;
+          const desc = card.querySelector('p')?.textContent || document.getElementById('modalDesc').textContent;
+          let instructor = '';
+          card.querySelectorAll('ul li').forEach(li => { if (li.textContent.toLowerCase().includes('instructor')) instructor = li.textContent.replace('Instructor:','').trim(); });
+          document.getElementById('modalTitle').textContent = title;
+          document.getElementById('modalDesc').textContent = desc;
+          if (instructor) document.getElementById('modalInstructor').textContent = 'Instructor: ' + instructor;
+        }
+        openModal();
+      });
+    }
+  });
+
+  // close on Escape
+  document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeModal(); });
+});
+</script>
+<style>
+:where([class^="ri-"])::before {
+content: "\f3c2";
+}
+</style>
+
+</head>
+
+<body class="bg-white min-h-screen">
+<nav class="bg-white shadow-sm sticky top-0 z-50">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<div class="flex justify-between items-center h-16">
+<div class="flex items-center space-x-3">
+<img src="ndu%20img.png" alt="NDU logo" class="w-8 h-8 object-contain rounded" />
+<img src="skillhub_logo.png" alt="SkillHub Logo" class="w-10 h-10 object-contain" />
+<div class="font-['Montserrat'] text-2xl text-primary">Docerad SkillHub</div>
+</div>
+<div class="hidden md:block">
+  <div class="ml-10 flex items-baseline space-x-8">
+    <a href="index.html#home" class="text-gray-900 hover:text-primary px-3 py-2 text-sm font-medium transition-colors" ...>Home</a>
+<a href="index.html#administration" class="text-gray-900 hover:text-primary px-3 py-2 text-sm font-medium transition-colors" ...>Administration</a>
+<a href="index.html#programs" class="text-gray-900 hover:text-primary px-3 py-2 text-sm font-medium transition-colors" ...>Programs</a>
+<a href="index.html#reviews" class="text-gray-900 hover:text-primary px-3 py-2 text-sm font-medium transition-colors" ...>Reviews</a>
+<a href="index.html#contact" class="text-gray-900 hover:text-primary px-3 py-2 text-sm font-medium transition-colors" ...>Contact</a>
+  </div>
+</div>
+
+</div>
+</div>
+</nav>
+<section class="relative py-20 bg-gradient-to-br from-primary/5 to-secondary/5">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<div class="text-center mb-16">
+<h1 class="text-4xl lg:text-5xl font-bold text-gray-900 mb-6">Our Training Programs</h1>
+<p class="text-xl text-gray-600 max-w-3xl mx-auto">Discover comprehensive skill development programs designed to empower Nigerian entrepreneurs</p>
+</div>
+<div class="bg-white rounded-lg shadow-sm p-6">
+<div class="mb-8">
+<div class="relative">
+<div class="w-full flex items-center">
+<div class="w-10 h-10 flex items-center justify-center">
+<i class="ri-search-line text-gray-400"></i>
+</div>
+<input type="text" id="program-search" placeholder="Search for programs..." class="w-full py-3 px-4 text-gray-600 placeholder-gray-400 focus:outline-none">
+</div>
+</div>
+</div>
+<div class="space-y-4" id="programs-accordion">
+<!-- Technical & Vocational Skills -->
+<div class="border rounded-lg">
+<button class="w-full px-6 py-4 flex items-center justify-between text-left focus:outline-none main-accordion-btn">
+<div class="flex items-center">
+<div class="w-10 h-10 flex items-center justify-center bg-primary/10 rounded-full mr-4">
+<i class="ri-tools-line text-primary"></i>
+</div>
+<span class="text-lg font-semibold">Technical & Vocational Skills</span>
+</div>
+<i class="ri-arrow-down-s-line text-xl transition-transform"></i>
+</button>
+<div id="vocational-dropdown-content" class="mt-4 hidden">
+    <div class="grid md:grid-cols-3 gap-8">
+      <!-- Course 11 -->
+      <div class="bg-white rounded-lg shadow p-6">
+        <div class="relative mb-4">
+            <img src="https://www.gz-supplies.com/product_images/uploaded_images/welder.jpg" alt="Welding and Fabrication in Nigeria" class="rounded-lg w-full h-56 object-cover">
+        </div>
+        <h3 class="text-xl font-semibold text-gray-900 mb-2">Welding and Fabrication</h3>
+        <p class="text-gray-600 mb-4">Skilled in joining and shaping metals to create strong structures for construction and industry.</p>
+        <div class="flex justify-end items-center">
+          <div class="flex space-x-2">
+            <button class="border border-primary text-primary px-4 py-2 rounded hover:bg-primary hover:text-white transition">View Details</button>
+            <button class="bg-primary text-white px-4 py-2 rounded hover:bg-green-700 transition">Enroll Now</button>
+          </div>
+        </div>
+      </div>
+      <!-- Course 12 -->
+      <div class="bg-white rounded-lg shadow p-6">
+        <div class="relative mb-4">
+            <img src="https://png.pngtree.com/png-vector/20250321/ourmid/pngtree-electrician-connecting-wires-in-electrical-panel-isolated-on-transparent-background-png-image_15819744.png" alt="Electrical Installation in Nigeria" class="rounded-lg w-full h-56 object-cover">
+        </div>
+        <h3 class="text-xl font-semibold text-gray-900 mb-2">Electrical Installation</h3>
+        <p class="text-gray-600 mb-4">Focused on setting up and maintaining safe, reliable electrical systems.</p>
+        <div class="flex justify-end items-center">
+          <div class="flex space-x-2">
+            <button class="border border-primary text-primary px-4 py-2 rounded hover:bg-primary hover:text-white transition">View Details</button>
+            <button class="bg-primary text-white px-4 py-2 rounded hover:bg-green-700 transition">Enroll Now</button>
+          </div>
+        </div>
+      </div>
+      <!-- Course 13 -->
+      <div class="bg-white rounded-lg shadow p-6">
+        <div class="relative mb-4">
+            <img src="https://img.freepik.com/free-photo/carpenter-cutting-mdf-board-inside-workshop_23-2149451070.jpg?semt=ais_incoming&w=740&q=80" alt="Carpentry in Nigeria" class="rounded-lg w-full h-56 object-cover">
+        </div>
+        <h3 class="text-xl font-semibold text-gray-900 mb-2">Carpentry</h3>
+        <p class="text-gray-600 mb-4">Crafting and repairing wooden structures and furniture with precision and creativity.</p>
+        <div class="flex justify-end items-center">
+          <div class="flex space-x-2">
+            <button class="border border-primary text-primary px-4 py-2 rounded hover:bg-primary hover:text-white transition">View Details</button>
+            <button class="bg-primary text-white px-4 py-2 rounded hover:bg-green-700 transition">Enroll Now</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- Digital & Technology -->
+<div class="border rounded-lg">
+      <button class="w-full px-6 py-4 flex items-center justify-between text-left focus:outline-none main-accordion-btn">
+      <div class="flex items-center">
+<div class="w-10 h-10 flex items-center justify-center bg-secondary/10 rounded-full mr-4">
+<i class="ri-computer-line text-secondary"></i>
+</div>
+<span class="text-lg font-semibold">Digital & Technology</span>
+      </div>
+<i class="ri-arrow-down-s-line text-xl transition-transform"></i>
+</button>
+<div id="vocational-dropdown-content" class="mt-4 hidden">
+    <div class="grid md:grid-cols-3 gap-8">
+      <!-- Course 21 -->
+      <div class="bg-white rounded-lg shadow p-6">
+        <div class="relative mb-4">
+              <img src="https://ayeorganization.com/wp-content/uploads/2021/10/web-design-1-1.png" alt="Web and App Development in Nigeria" class="rounded-lg w-full h-56 object-cover">
+        </div>
+        <h3 class="text-xl font-semibold text-gray-900 mb-2">Web and App Development</h3>
+        <p class="text-gray-600 mb-4">Designing and building digital platforms.</p>
+        <div class="flex justify-end items-center">
+          <div class="flex space-x-2">
+            <button class="border border-primary text-primary px-4 py-2 rounded hover:bg-primary hover:text-white transition">View Details</button>
+            <button class="bg-primary text-white px-4 py-2 rounded hover:bg-green-700 transition">Enroll Now</button>
+          </div>
+        </div>
+      </div>
+      <!-- Course 22 -->
+      <div class="bg-white rounded-lg shadow p-6">
+        <div class="relative mb-4">
+              <img src="https://cdn.punchng.com/wp-content/uploads/2024/10/02222848/cybersecurity.png" alt="Cybersecurity in Nigeria" class="rounded-lg w-full h-56 object-cover">
+        </div>
+        <h3 class="text-xl font-semibold text-gray-900 mb-2">Cybersecurity</h3>
+        <p class="text-gray-600 mb-4">Protecting systems and data from online threats.</p>
+        <div class="flex justify-end items-center">
+          <div class="flex space-x-2">
+            <button class="border border-primary text-primary px-4 py-2 rounded hover:bg-primary hover:text-white transition">View Details</button>
+            <button class="bg-primary text-white px-4 py-2 rounded hover:bg-green-700 transition">Enroll Now</button>
+          </div>
+        </div>
+      </div>
+      <!-- Course 23 -->
+      <div class="bg-white rounded-lg shadow p-6">
+        <div class="relative mb-4">
+              <img src="https://www.i4globalservices.com/wp-content/uploads/2025/05/image-9.png" alt="Data Analysis in Nigeria" class="rounded-lg w-full h-56 object-cover">
+        </div>
+        <h3 class="text-xl font-semibold text-gray-900 mb-2">Data Analysis</h3>
+        <p class="text-gray-600 mb-4">interpreting and managing information for decision-making.</p>
+        <div class="flex justify-end items-center">
+          <div class="flex space-x-2">
+            <button class="border border-primary text-primary px-4 py-2 rounded hover:bg-primary hover:text-white transition">View Details</button>
+            <button class="bg-primary text-white px-4 py-2 rounded hover:bg-green-700 transition">Enroll Now</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- Creative & Fashion -->
+<div class="border rounded-lg">
+<button class="w-full px-6 py-4 flex items-center justify-between text-left focus:outline-none main-accordion-btn">
+<div class="flex items-center">
+<div class="w-10 h-10 flex items-center justify-center bg-primary/10 rounded-full mr-4">
+<i class="ri-scissors-line text-primary"></i>
+</div>
+<span class="text-lg font-semibold">Creative & Fashion</span>
+</div>
+<i class="ri-arrow-down-s-line text-xl transition-transform"></i>
+</button>
+<div id="vocational-dropdown-content" class="mt-4 hidden">
+    <div class="grid md:grid-cols-3 gap-8">
+      <!-- Course 31 -->
+      <div class="bg-white rounded-lg shadow p-6">
+        <div class="relative mb-4">
+        <img src="https://i.pinimg.com/236x/f8/f3/86/f8f38680c39a60f2a39dea08bbadf2a2.jpg" alt="Fashion Design in Nigeria" class="rounded-lg w-full h-56 object-cover object-top">
+        </div>
+        <h3 class="text-xl font-semibold text-gray-900 mb-2">Fashion Design</h3>
+        <p class="text-gray-600 mb-4">The creative process of designing and making stylish clothing and accessories.</p>
+        <div class="flex justify-end items-center">
+          <div class="flex space-x-2">
+            <button class="border border-primary text-primary px-4 py-2 rounded hover:bg-primary hover:text-white transition">View Details</button>
+            <button class="bg-primary text-white px-4 py-2 rounded hover:bg-green-700 transition">Enroll Now</button>
+          </div>
+        </div>
+      </div>
+      <!-- Course 32 -->
+      <div class="bg-white rounded-lg shadow p-6">
+        <div class="relative mb-4">
+              <img src="https://s.alicdn.com/@sc04/kf/Hc08e468aba85469591a06658d5f32aa3K.png_300x300.jpg" alt="Fabric Printing in Nigeria" class="rounded-lg w-full h-56 object-cover">
+        </div>
+        <h3 class="text-xl font-semibold text-gray-900 mb-2">Fabric Printing</h3>
+        <p class="text-gray-600 mb-4">Adding colors and patterns to fabrics through printing techniques.</p>
+        <div class="flex justify-end items-center">
+          <div class="flex space-x-2">
+            <button class="border border-primary text-primary px-4 py-2 rounded hover:bg-primary hover:text-white transition">View Details</button>
+            <button class="bg-primary text-white px-4 py-2 rounded hover:bg-green-700 transition">Enroll Now</button>
+          </div>
+        </div>
+      </div>
+      <!-- Course 33 -->
+      <div class="bg-white rounded-lg shadow p-6">
+        <div class="relative mb-4">
+        <img src="https://res.cloudinary.com/kusnap/image/upload/v1676532020/smlzwjre5fdlnbfo7c05.jpg" alt="Tie & Dye in Nigeria" class="rounded-lg w-full h-56 object-cover object-top">
+        </div>
+        <h3 class="text-xl font-semibold text-gray-900 mb-2">Tie & Dye</h3>
+        <p class="text-gray-600 mb-4">The art of tying and dyeing fabric to create unique patterns and designs.</p>
+        <div class="flex justify-end items-center">
+          <div class="flex space-x-2">
+            <button class="border border-primary text-primary px-4 py-2 rounded hover:bg-primary hover:text-white transition">View Details</button>
+            <button class="bg-primary text-white px-4 py-2 rounded hover:bg-green-700 transition">Enroll Now</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- Agriculture & Food Processing -->
+<div class="border rounded-lg">
+<button class="w-full px-6 py-4 flex items-center justify-between text-left focus:outline-none main-accordion-btn">
+<div class="flex items-center">
+<div class="w-10 h-10 flex items-center justify-center bg-secondary/10 rounded-full mr-4">
+<i class="ri-plant-line text-secondary"></i>
+</div>
+<span class="text-lg font-semibold">Agriculture & Food Processing</span>
+</div>
+<i class="ri-arrow-down-s-line text-xl transition-transform"></i>
+</button>
+<div id="vocational-dropdown-content" class="mt-4 hidden">
+    <div class="grid md:grid-cols-3 gap-8">
+      <!-- Course 41 -->
+      <div class="bg-white rounded-lg shadow p-6">
+        <div class="relative mb-4">
+              <img src="https://ayeorganization.com/wp-content/uploads/2021/10/web-design-1-1.png" alt="Web and App Development in Nigeria" class="rounded-lg w-full h-56 object-cover">
+        </div>
+        <h3 class="text-xl font-semibold text-gray-900 mb-2">Crop Production</h3>
+        <p class="text-gray-600 mb-4">Skilled in joining and shaping metals to create strong structures for construction and industry.</p>
+        <div class="flex justify-end items-center">
+          <div class="flex space-x-2">
+            <button class="border border-primary text-primary px-4 py-2 rounded hover:bg-primary hover:text-white transition">View Details</button>
+            <button class="bg-primary text-white px-4 py-2 rounded hover:bg-green-700 transition">Enroll Now</button>
+          </div>
+        </div>
+      </div>
+      <!-- Course 42 -->
+      <div class="bg-white rounded-lg shadow p-6">
+        <div class="relative mb-4">
+            <img src="https://png.pngtree.com/png-vector/20250321/ourmid/pngtree-electrician-connecting-wires-in-electrical-panel-isolated-on-transparent-background-png-image_15819744.png" alt="Electrical Installation in Nigeria" class="rounded-lg w-full h-56 object-cover">
+        </div>
+        <h3 class="text-xl font-semibold text-gray-900 mb-2">Livestock and Aquaculture</h3>
+        <p class="text-gray-600 mb-4">Focused on setting up and maintaining safe, reliable electrical systems.</p>
+        <div class="flex justify-end items-center">
+          <div class="flex space-x-2">
+            <button class="border border-primary text-primary px-4 py-2 rounded hover:bg-primary hover:text-white transition">View Details</button>
+            <button class="bg-primary text-white px-4 py-2 rounded hover:bg-green-700 transition">Enroll Now</button>
+          </div>
+        </div>
+      </div>
+      <!-- Course 43 -->
+      <div class="bg-white rounded-lg shadow p-6">
+        <div class="relative mb-4">
+            <img src="https://img.freepik.com/free-photo/carpenter-cutting-mdf-board-inside-workshop_23-2149451070.jpg?semt=ais_incoming&w=740&q=80" alt="Carpentry in Nigeria" class="rounded-lg w-full h-56 object-cover">
+        </div>
+        <h3 class="text-xl font-semibold text-gray-900 mb-2">Modern/Smart Farming</h3>
+        <p class="text-gray-600 mb-4">Crafting and repairing wooden structures and furniture with precision and creativity.</p>
+        <div class="flex justify-end items-center">
+          <div class="flex space-x-2">
+            <button class="border border-primary text-primary px-4 py-2 rounded hover:bg-primary hover:text-white transition">View Details</button>
+            <button class="bg-primary text-white px-4 py-2 rounded hover:bg-green-700 transition">Enroll Now</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+  
+  <!-- Beauty & Personal Care -->
+<div class="border rounded-lg">
+<button class="w-full px-6 py-4 flex items-center justify-between text-left focus:outline-none main-accordion-btn">
+<div class="flex items-center">
+<div class="w-10 h-10 flex items-center justify-center bg-primary/10 rounded-full mr-4">
+<i class="ri-brush-line text-primary"></i>
+</div>
+<span class="text-lg font-semibold">Beauty & Personal Care</span>
+</div>
+<i class="ri-arrow-down-s-line text-xl transition-transform"></i>
+</button>
+<div id="vocational-dropdown-content" class="mt-4 hidden">
+    <div class="grid md:grid-cols-3 gap-8">
+      <!-- Course 51 -->
+      <div class="bg-white rounded-lg shadow p-6">
+        <div class="relative mb-4">
+              <img src="https://i.pinimg.com/236x/f8/f3/86/f8f38680c39a60f2a39dea08bbadf2a2.jpg" alt="Fashion Design in Nigeria" class="rounded-lg w-full h-56 object-cover">
+        </div>
+        <h3 class="text-xl font-semibold text-gray-900 mb-2">Welding and Fabrication</h3>
+        <p class="text-gray-600 mb-4">Skilled in joining and shaping metals to create strong structures for construction and industry.</p>
+        <div class="flex justify-end items-center">
+          <div class="flex space-x-2">
+            <button class="border border-primary text-primary px-4 py-2 rounded hover:bg-primary hover:text-white transition">View Details</button>
+            <button class="bg-primary text-white px-4 py-2 rounded hover:bg-green-700 transition">Enroll Now</button>
+          </div>
+        </div>
+      </div>
+      <!-- Course 52 -->
+      <div class="bg-white rounded-lg shadow p-6">
+        <div class="relative mb-4">
+            <img src="https://png.pngtree.com/png-vector/20250321/ourmid/pngtree-electrician-connecting-wires-in-electrical-panel-isolated-on-transparent-background-png-image_15819744.png" alt="Electrical Installation in Nigeria" class="rounded-lg w-full h-56 object-cover">
+        </div>
+        <h3 class="text-xl font-semibold text-gray-900 mb-2">Electrical Installation</h3>
+        <p class="text-gray-600 mb-4">Focused on setting up and maintaining safe, reliable electrical systems.</p>
+        <div class="flex justify-end items-center">
+          <div class="flex space-x-2">
+            <button class="border border-primary text-primary px-4 py-2 rounded hover:bg-primary hover:text-white transition">View Details</button>
+            <button class="bg-primary text-white px-4 py-2 rounded hover:bg-green-700 transition">Enroll Now</button>
+          </div>
+        </div>
+      </div>
+      <!-- Course 53 -->
+      <div class="bg-white rounded-lg shadow p-6">
+        <div class="relative mb-4">
+            <img src="https://img.freepik.com/free-photo/carpenter-cutting-mdf-board-inside-workshop_23-2149451070.jpg?semt=ais_incoming&w=740&q=80" alt="Carpentry in Nigeria" class="rounded-lg w-full h-56 object-cover">
+        </div>
+        <h3 class="text-xl font-semibold text-gray-900 mb-2">Carpentry</h3>
+        <p class="text-gray-600 mb-4">Crafting and repairing wooden structures and furniture with precision and creativity.</p>
+        <div class="flex justify-end items-center">
+          <div class="flex space-x-2">
+            <button class="border border-primary text-primary px-4 py-2 rounded hover:bg-primary hover:text-white transition">View Details</button>
+            <button class="bg-primary text-white px-4 py-2 rounded hover:bg-green-700 transition">Enroll Now</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+
+<section class="py-20 bg-gradient-to-r from-primary to-green-600 text-white">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+<h2 class="text-3xl lg:text-4xl font-bold mb-6">Ready to Transform Your Future?</h2>
+<p class="text-xl mb-8 opacity-90">Join thousands of successful graduates who started their journey with SkillHub Nigeria</p>
+<div class="flex flex-col sm:flex-row gap-4 justify-center">
+<button class="bg-white text-primary px-8 py-4 !rounded-button text-lg font-semibold hover:bg-gray-100 transition-colors whitespace-nowrap">
+Enroll Now
+</button>
+
+</div>
+</div>
+</section>
+<footer id="contact" class="bg-gray-900 text-white py-16">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<div class="grid md:grid-cols-4 gap-8">
+<div>
+<div class="font-['Montserrat'] text-2xl text-primary mb-4">Skill Training</div>
+<p class="text-gray-300 mb-4">Empowering Nigerian entrepreneurs with world-class skills training and certification programs.</p>
+
+</div>
+<div class="w-8 h-8 flex items-center justify-center">
+<i class="ri-twitter-fill text-primary"></i>
+</div>
+<div class="w-8 h-8 flex items-center justify-center">
+<i class="ri-instagram-fill text-primary"></i>
+</div>
+<div class="w-8 h-8 flex items-center justify-center">
+<i class="ri-linkedin-fill text-primary"></i>
+</div>
+</div>
+</div>
+<div>
+<h3 class="text-lg font-semibold mb-4">Quick Links</h3>
+<ul class="space-y-2 text-gray-300">
+<li><a href="#" class="hover:text-primary transition-colors">About Us</a></li>
+<li><a href="#" class="hover:text-primary transition-colors">Programs</a></li>
+<li><a href="#" class="hover:text-primary transition-colors">Admissions</a></li>
+<li><a href="#" class="hover:text-primary transition-colors">Success Stories</a></li>
+<li><a href="#" class="hover:text-primary transition-colors">Blog</a></li>
+</ul>
+</div>
+<div>
+<h3 class="text-lg font-semibold mb-4">Programs</h3>
+<ul class="space-y-2 text-gray-300">
+<li><a href="#" class="hover:text-primary transition-colors">Technical Skills</a></li>
+<li><a href="#" class="hover:text-primary transition-colors">Digital Skills</a></li>
+<li><a href="#" class="hover:text-primary transition-colors">Creative Arts</a></li>
+<li><a href="#" class="hover:text-primary transition-colors">Business Skills</a></li>
+<li><a href="#" class="hover:text-primary transition-colors">Agriculture</a></li>
+</ul>
+</div>
+<div>
+<h3 class="text-lg font-semibold mb-4">Contact Info</h3>
+<div class="space-y-3 text-gray-300">
+<div class="flex items-center">
+<div class="w-5 h-5 flex items-center justify-center mr-3">
+<i class="ri-map-pin-line"></i>
+</div>
+<span>123 Victoria Island, Lagos, Nigeria</span>
+</div>
+<div class="flex items-center">
+<div class="w-5 h-5 flex items-center justify-center mr-3">
+<i class="ri-phone-line"></i>
+</div>
+<span>+234 803 123 4567</span>
+</div>
+<div class="flex items-center">
+<div class="w-5 h-5 flex items-center justify-center mr-3">
+<i class="ri-mail-line"></i>
+</div>
+<span>info@e=Entrepreneurshipskillstrainingnigeria.com</span>
+</div>
+</div>
+</div>
+</div>
+<div class="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400">
+<p>&copy; 2025 SkillHub Nigeria. All rights reserved. Empowering Nigerian entrepreneurs since 2020.</p>
+</div>
+</div>
+</footer>
+<script id="accordion-functionality">
+document.addEventListener('DOMContentLoaded', function() {
+const mainAccordionBtns = document.querySelectorAll('.main-accordion-btn');
+const subAccordionBtns = document.querySelectorAll('.sub-accordion-btn');
+const searchInput = document.getElementById('program-search');
+function toggleAccordion(btn, isMain = true) {
+const content = btn.nextElementSibling;
+const arrow = btn.querySelector('.ri-arrow-down-s-line');
+const isOpen = !content.classList.contains('hidden');
+if (isMain) {
+mainAccordionBtns.forEach(otherBtn => {
+if (otherBtn !== btn) {
+otherBtn.nextElementSibling.classList.add('hidden');
+otherBtn.querySelector('.ri-arrow-down-s-line').style.transform = 'rotate(0deg)';
+}
+});
+}
+content.classList.toggle('hidden');
+arrow.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+}
+mainAccordionBtns.forEach(btn => {
+btn.addEventListener('click', () => toggleAccordion(btn));
+});
+subAccordionBtns.forEach(btn => {
+btn.addEventListener('click', () => toggleAccordion(btn, false));
+});
+searchInput.addEventListener('input', function(e) {
+const searchTerm = e.target.value.toLowerCase();
+const allMainAccordions = document.querySelectorAll('.main-accordion-btn');
+const allSubAccordions = document.querySelectorAll('.sub-accordion');
+allMainAccordions.forEach(accordion => {
+const mainText = accordion.textContent.toLowerCase();
+const mainSection = accordion.closest('.border');
+const subAccordions = mainSection.querySelectorAll('.sub-accordion');
+let shouldShowMain = false;
+subAccordions.forEach(subAccordion => {
+const subText = subAccordion.textContent.toLowerCase();
+if (subText.includes(searchTerm)) {
+subAccordion.style.display = 'block';
+shouldShowMain = true;
+} else {
+subAccordion.style.display = 'none';
+}
+});
+if (mainText.includes(searchTerm) || shouldShowMain) {
+mainSection.style.display = 'block';
+if (searchTerm.length > 2) {
+accordion.nextElementSibling.classList.remove('hidden');
+accordion.querySelector('.ri-arrow-down-s-line').style.transform = 'rotate(180deg)';
+}
+} else {
+mainSection.style.display = 'none';
+}
+});
+});
+});
+</script>
+<script id="smooth-scrolling">
+document.addEventListener('DOMContentLoaded', function() {
+const links = document.querySelectorAll('a[href^="#"]');
+links.forEach(link => {
+link.addEventListener('click', function(e) {
+e.preventDefault();
+const targetId = this.getAttribute('href');
+const targetSection = document.querySelector(targetId);
+if (targetSection) {
+targetSection.scrollIntoView({
+behavior: 'smooth',
+block: 'start'
+});
+}
+});
+});
+});
+</script>
+</body>
+</html>
