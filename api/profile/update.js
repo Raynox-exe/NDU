@@ -1,7 +1,7 @@
-import { sql } from '@vercel/postgres';
-import jwt from 'jsonwebtoken';
+const { sql } = require("@vercel/postgres");
+const jwt = require("jsonwebtoken");
 
-export default async function handler(request, response) {
+module.exports = async function handler(request, response) {
   if (request.method !== 'PUT') {
     return response.status(405).json({ message: 'Method not allowed' });
   }
@@ -62,4 +62,4 @@ export default async function handler(request, response) {
     console.error('Profile Update Error:', error);
     return response.status(500).json({ message: 'Server error', error: error.message });
   }
-}
+};

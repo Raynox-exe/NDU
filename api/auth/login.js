@@ -1,17 +1,17 @@
-import { sql } from '@vercel/postgres';
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+const { sql } = require("@vercel/postgres");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 
-export default async function handler(request, response) {
-  if (request.method !== 'POST') {
-    return response.status(405).json({ message: 'Method not allowed' });
+module.exports = async function handler(request, response) {
+  if (request.method !== "POST") {
+    return response.status(405).json({ message: "Method not allowed" });
   }
 
   try {
     const { email, password } = request.body;
 
     if (!email || !password) {
-      return response.status(400).json({ message: 'Email and password are required' });
+      return response.status(400).json({ message: "Email and password are required" });
     }
 
     // Find user
@@ -19,13 +19,13 @@ export default async function handler(request, response) {
     const user = rows[0];
 
     if (!user) {
-      return response.status(400).json({ message: 'Invalid credentials' });
+      return response.status(400).json({ message: "Invalid credentials" });
     }
 
     // Check password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return response.status(400).json({ message: 'Invalid credentials' });
+      return response.status(400).json({ message: "Invalid credentials" });
     }
 
     // Generate Token
@@ -48,4 +48,4 @@ export default async function handler(request, response) {
     console.error('Login Error:', error);
     return response.status(500).json({ message: 'Internal server error' });
   }
-}
+};

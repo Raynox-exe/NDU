@@ -1,7 +1,7 @@
-import { sql } from "@vercel/postgres";
-import bcrypt from "bcryptjs";
+const { sql } = require("@vercel/postgres");
+const bcrypt = require("bcryptjs");
 
-export default async function handler(request, response) {
+module.exports = async function handler(request, response) {
   if (request.method !== "POST") {
     return response.status(405).json({ message: "Method not allowed" });
   }
@@ -35,4 +35,4 @@ export default async function handler(request, response) {
       .status(500)
       .json({ message: "Internal server error", error: error.message });
   }
-}
+};
