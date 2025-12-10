@@ -666,12 +666,6 @@
                     const formData = new FormData(form);
                     
                     // Handle Dynamic Fields Logic
-                    // We need to manually adjust the FormData or ensure the backend handles the _select vs _other logic.
-                    // Since we are sending FormData directly for file uploads, we can't easily "delete" keys like in a plain object without creating a new FormData.
-                    // A better approach is to append the final values to the FormData if they are missing or incorrect, 
-                    // BUT since we have files, we MUST use FormData.
-                    
-                    // Let's fix the values in the FormData object
                     if (formData.get('nationality_select') === 'Others') {
                         formData.set('nationality', formData.get('nationality_other'));
                     } else {
@@ -690,7 +684,7 @@
                         formData.set('lga', formData.get('lga_select'));
                     }
                     
-                    // Remove temporary fields (optional, backend can just ignore them)
+                    // Remove temporary fields
                     formData.delete('nationality_select');
                     formData.delete('nationality_other');
                     formData.delete('state_origin_select');
@@ -698,12 +692,18 @@
                     formData.delete('lga_select');
                     formData.delete('lga_other');
 
-                    console.log('Submitting FormData...');
+                    // Convert FormData to JSON object (Vercel serverless functions expect JSON)
+                    const jsonData = {};
+                    for (let [key, value] of formData.entries()) {
+                        jsonData[key] = value;
+                    }
+                    
+                    console.log('Submitting JSON Data:', jsonData);
                     
                     const token = localStorage.getItem('token');
                     if (!token) {
                         alert('You are not logged in. Please login again.');
-                        window.location.href = 'login2.html';
+                        window.location.href = 'login.html';
                         return;
                     }
 
@@ -714,10 +714,10 @@
                         const response = await fetch('/api/profile/update', {
                             method: 'PUT',
                             headers: {
-                                // 'Content-Type': 'multipart/form-data', // DO NOT SET THIS MANUALLY with fetch + FormData
+                                'Content-Type': 'application/json',
                                 'x-auth-token': token
                             },
-                            body: formData
+                            body: JSON.stringify(jsonData)
                         });
 
                         const result = await response.json();
