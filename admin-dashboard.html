@@ -38,9 +38,17 @@
                     <i class="ri-dashboard-line text-xl"></i>
                     Overview
                 </a>
+                <a href="#" onclick="showSection('students')" class="nav-link flex items-center gap-3 px-4 py-3 text-gray-600 hover:bg-gray-50 rounded-lg">
+                    <i class="ri-user-line text-xl"></i>
+                    Students
+                </a>
+                <a href="#" onclick="showSection('lecturers')" class="nav-link flex items-center gap-3 px-4 py-3 text-gray-600 hover:bg-gray-50 rounded-lg">
+                    <i class="ri-user-star-line text-xl"></i>
+                    Lecturers
+                </a>
                 <a href="#" onclick="showSection('users')" class="nav-link flex items-center gap-3 px-4 py-3 text-gray-600 hover:bg-gray-50 rounded-lg">
                     <i class="ri-user-settings-line text-xl"></i>
-                    Users
+                    User Management
                 </a>
                 <a href="#" onclick="showSection('courses')" class="nav-link flex items-center gap-3 px-4 py-3 text-gray-600 hover:bg-gray-50 rounded-lg">
                     <i class="ri-book-line text-xl"></i>
@@ -105,6 +113,59 @@
                                 <i class="ri-book-line text-2xl text-orange-600"></i>
                             </div>
                             <p class="text-3xl font-bold" id="totalCourses">0</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Students Section -->
+                <div id="students-section" class="section hidden">
+                    <div class="bg-white rounded-xl shadow-sm border overflow-hidden">
+                        <div class="p-6 border-b">
+                            <h2 class="text-lg font-bold">All Students</h2>
+                            <p class="text-sm text-gray-500 mt-1">Complete list of registered students</p>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead class="bg-gray-50">
+                                    <tr class="text-left text-sm text-gray-600">
+                                        <th class="p-4">Full Name</th>
+                                        <th class="p-4">Email</th>
+                                        <th class="p-4">Phone</th>
+                                        <th class="p-4">Enrolled Courses</th>
+                                        <th class="p-4">Registered Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="studentsTableBody" class="divide-y">
+                                    <!-- Populated by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Lecturers Section -->
+                <div id="lecturers-section" class="section hidden">
+                    <div class="bg-white rounded-xl shadow-sm border overflow-hidden">
+                        <div class="p-6 border-b">
+                            <h2 class="text-lg font-bold">All Lecturers</h2>
+                            <p class="text-sm text-gray-500 mt-1">Complete list of lecturers and their courses</p>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead class="bg-gray-50">
+                                    <tr class="text-left text-sm text-gray-600">
+                                        <th class="p-4">Full Name</th>
+                                        <th class="p-4">Email</th>
+                                        <th class="p-4">Phone</th>
+                                        <th class="p-4">Courses Teaching</th>
+                                        <th class="p-4">Total Students</th>
+                                        <th class="p-4">Registered Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="lecturersTableBody" class="divide-y">
+                                    <!-- Populated by JS -->
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
@@ -234,17 +295,25 @@
             event.target.closest('.nav-link').classList.add('bg-primary/10', 'text-primary');
             event.target.closest('.nav-link').classList.remove('text-gray-600');
 
-            const titles = { overview: 'Dashboard Overview', users: 'User Management', courses: 'Course Management' };
+            const titles = { 
+                overview: 'Dashboard Overview', 
+                students: 'All Students',
+                lecturers: 'All Lecturers',
+                users: 'User Management', 
+                courses: 'Course Management' 
+            };
             document.getElementById('pageTitle').textContent = titles[section];
 
+            if (section === 'students') fetchStudents();
+            if (section === 'lecturers') fetchLecturers();
             if (section === 'users') fetchUsers();
             if (section === 'courses') fetchCourses();
         }
 
         async function fetchStats() {
             try {
-                const users = await fetch('/api/users/list', { headers: { 'x-auth-token': token } }).then(r => r.json());
-                const courses = await fetch('/api/courses/list', { headers: { 'x-auth-token': token } }).then(r => r.json());
+                const users = await fetch('/api/users', { headers: { 'x-auth-token': token } }).then(r => r.json());
+                const courses = await fetch('/api/courses', { headers: { 'x-auth-token': token } }).then(r => r.json());
                 
                 document.getElementById('totalUsers').textContent = users.length;
                 document.getElementById('totalStudents').textContent = users.filter(u => u.role === 'student').length;
@@ -255,9 +324,70 @@
             }
         }
 
+        async function fetchStudents() {
+            try {
+                const users = await fetch('/api/users', { headers: { 'x-auth-token': token } }).then(r => r.json());
+                const enrollments = await fetch('/api/enrollments', { headers: { 'x-auth-token': token } }).then(r => r.json());
+                
+                const students = users.filter(u => u.role === 'student');
+                const tbody = document.getElementById('studentsTableBody');
+                
+                tbody.innerHTML = students.map(student => {
+                    const studentEnrollments = enrollments.filter(e => e.student_name === student.fullname);
+                    const coursesList = studentEnrollments.map(e => e.course_name).join(', ') || 'None';
+                    
+                    return `
+                        <tr class="hover:bg-gray-50">
+                            <td class="p-4 font-medium">${student.fullname}</td>
+                            <td class="p-4 text-gray-600">${student.email}</td>
+                            <td class="p-4 text-gray-600">${student.phone || 'N/A'}</td>
+                            <td class="p-4 text-sm">${coursesList}</td>
+                            <td class="p-4 text-gray-600">${new Date(student.created_at).toLocaleDateString()}</td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (error) {
+                console.error('Error fetching students:', error);
+            }
+        }
+
+        async function fetchLecturers() {
+            try {
+                const users = await fetch('/api/users', { headers: { 'x-auth-token': token } }).then(r => r.json());
+                const courses = await fetch('/api/courses', { headers: { 'x-auth-token': token } }).then(r => r.json());
+                const enrollments = await fetch('/api/enrollments', { headers: { 'x-auth-token': token } }).then(r => r.json());
+                
+                const lecturers = users.filter(u => u.role === 'lecturer');
+                const tbody = document.getElementById('lecturersTableBody');
+                
+                tbody.innerHTML = lecturers.map(lecturer => {
+                    const lecturerCourses = courses.filter(c => c.lecturer_id === lecturer.id);
+                    const coursesList = lecturerCourses.map(c => c.course_name).join(', ') || 'None';
+                    
+                    // Count total students across all lecturer's courses
+                    const totalStudents = lecturerCourses.reduce((sum, course) => {
+                        return sum + enrollments.filter(e => e.course_name === course.course_name).length;
+                    }, 0);
+                    
+                    return `
+                        <tr class="hover:bg-gray-50">
+                            <td class="p-4 font-medium">${lecturer.fullname}</td>
+                            <td class="p-4 text-gray-600">${lecturer.email}</td>
+                            <td class="p-4 text-gray-600">${lecturer.phone || 'N/A'}</td>
+                            <td class="p-4 text-sm">${coursesList}</td>
+                            <td class="p-4 text-center font-medium">${totalStudents}</td>
+                            <td class="p-4 text-gray-600">${new Date(lecturer.created_at).toLocaleDateString()}</td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (error) {
+                console.error('Error fetching lecturers:', error);
+            }
+        }
+
         async function fetchUsers() {
             try {
-                const response = await fetch('/api/users/list', { headers: { 'x-auth-token': token } });
+                const response = await fetch('/api/users', { headers: { 'x-auth-token': token } });
                 const users = await response.json();
                 
                 const tbody = document.getElementById('usersTableBody');
@@ -289,7 +419,7 @@
 
         async function fetchCourses() {
             try {
-                const response = await fetch('/api/courses/list', { headers: { 'x-auth-token': token } });
+                const response = await fetch('/api/courses', { headers: { 'x-auth-token': token } });
                 const courses = await response.json();
                 
                 const tbody = document.getElementById('coursesTableBody');
@@ -322,7 +452,7 @@
         async function confirmPromotion() {
             const newRole = document.getElementById('newRoleSelect').value;
             try {
-                const response = await fetch('/api/users/promote', {
+                const response = await fetch('/api/users', {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json', 'x-auth-token': token },
                     body: JSON.stringify({ userId: currentPromoteUserId, newRole })
@@ -365,7 +495,7 @@
             };
             
             try {
-                const response = await fetch('/api/courses/create', {
+                const response = await fetch('/api/courses', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'x-auth-token': token },
                     body: JSON.stringify(courseData)

@@ -174,7 +174,7 @@
         async function loadDashboard() {
             try {
                 // Fetch courses
-                const coursesRes = await fetch('/api/courses/list', { headers: { 'x-auth-token': token } });
+                const coursesRes = await fetch('/api/courses', { headers: { 'x-auth-token': token } });
                 const allCourses = await coursesRes.json();
                 
                 // Get current user info
@@ -186,7 +186,7 @@
                 myCourses = allCourses.filter(c => c.lecturer_id === profile.id);
 
                 // Fetch enrollments
-                const enrollmentsRes = await fetch('/api/enrollments/list', { headers: { 'x-auth-token': token } });
+                const enrollmentsRes = await fetch('/api/enrollments', { headers: { 'x-auth-token': token } });
                 enrollments = await enrollmentsRes.json();
 
                 // Update stats
