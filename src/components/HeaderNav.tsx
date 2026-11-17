@@ -307,10 +307,10 @@ export function HeaderNav({ activePage, onNavigate, onOpenJournals }: HeaderNavP
       {/* Operational Opening Hours Slide Ribbon (PDF Page 1: "Library Opening Hours: Monday - Friday 8:00am - 4:00pm (Note this should be in slide)") */}
       <div
         aria-label="Library Opening Hours Notice"
-        className="border-b border-[#0D3121] bg-[#14452F] text-stone-100 overflow-hidden"
+        className="border-b border-[#0D3121] bg-[#14452F] text-stone-100 overflow-hidden select-none"
       >
         <div className="animate-hours-slide py-2 text-xs tracking-wide">
-          {[0, 1].map((dup) => (
+          {[0, 1, 2, 3].map((dup) => (
             <div key={dup} className="flex items-center gap-8 px-4 whitespace-nowrap shrink-0">
               <span className="font-semibold text-amber-300">
                 Library Opening Hours: Monday – Friday · 8:00am – 4:00pm

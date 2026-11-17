@@ -32,25 +32,20 @@
 
 @keyframes hoursSlide {
   0% {
-    transform: translateX(0%);
+    transform: translate3d(0, 0, 0);
   }
   100% {
-    transform: translateX(-50%);
+    transform: translate3d(-50%, 0, 0);
   }
 }
 
 .animate-hours-slide {
-  display: flex;
-  width: max-content;
-  animation: hoursSlide 32s linear infinite;
+  display: flex !important;
+  width: max-content !important;
+  will-change: transform;
+  animation: hoursSlide 30s linear infinite !important;
 }
 
 .animate-hours-slide:hover {
-  animation-play-state: paused;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .animate-hours-slide {
-    animation: none;
-  }
+  animation-play-state: paused !important;
 }

@@ -180,7 +180,7 @@ export function HomeAboutView({
                 </h2>
               </div>
 
-              <div className="max-w-[66ch] space-y-4 text-[15px] sm:text-base leading-[1.7] text-stone-700">
+              <div className="max-w-[66ch] space-y-4 text-[15px] sm:text-base leading-[1.7] text-stone-700 text-justify [text-justify:inter-word]">
                 <p className="first-letter:font-serif first-letter:text-5xl first-letter:font-semibold first-letter:text-[#14452F] first-letter:float-left first-letter:mr-3 first-letter:mt-1 first-letter:leading-none">
                   Welcome to the Niger Delta University Library, Wilberforce Island. The Library&apos;s
                   website is the gateway to our resources and services. The University Library is a
