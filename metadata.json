@@ -1,0 +1,6 @@
+{
+  "name": "Niger Delta University Library & E-Library",
+  "description": "Official gateway to Niger Delta University Library resources, faculty libraries, electronic databases, and departmental open access e-journals.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,56 @@
+@import "tailwindcss";
+
+@theme {
+  --font-serif: "Playfair Display", Georgia, Cambria, "Times New Roman", Times, serif;
+  --font-sans: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  --color-ndu-green: #14452F;
+  --color-ndu-green-dark: #0D3121;
+  --color-ndu-navy: #0B3B69;
+  --color-ndu-gold: #C2820A;
+  --color-paper: #FBF9F5;
+  --color-limestone: #EBE6DF;
+}
+
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, .font-editorial {
+    font-family: var(--font-serif);
+  }
+
+  button, input, select, textarea {
+    font-family: inherit;
+  }
+}
+
+@keyframes hoursSlide {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-hours-slide {
+  display: flex;
+  width: max-content;
+  animation: hoursSlide 32s linear infinite;
+}
+
+.animate-hours-slide:hover {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-hours-slide {
+    animation: none;
+  }
+}
