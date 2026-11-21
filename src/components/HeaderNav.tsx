@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ChevronDown, ExternalLink, Menu, X, User as UserIcon, Shield, Upload } from 'lucide-react';
+import { ChevronDown, ExternalLink, Menu, X, User as UserIcon, Shield, Upload, Bell } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { LIBRARY_SERVICES, type LibraryServiceItem } from '../data/libraryMeta';
 import { INSTITUTIONAL_EASE } from './MotionPrimitives';
@@ -71,6 +71,7 @@ export function HeaderNav({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileServicesExpanded, setMobileServicesExpanded] = useState(false);
   const [mobilePublicationsExpanded, setMobilePublicationsExpanded] = useState(false);
+  const [liveNewsCount, setLiveNewsCount] = useState(0);
 
   // Dynamic sections and links from admin
   const [dynamicSections, setDynamicSections] = useState<DynamicSection[]>([]);
@@ -95,6 +96,22 @@ export function HeaderNav({
       isMounted = false;
     };
   }, [activePage]);
+
+  // Fetch live news count for badge
+  useEffect(() => {
+    let isMounted = true;
+    api.public
+      .getNews()
+      .then((res) => {
+        if (isMounted && res.success && res.news) {
+          setLiveNewsCount(res.news.filter((n) => n.is_active !== false).length);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     function handleOutsideClick(e: MouseEvent) {
@@ -335,9 +352,14 @@ export function HeaderNav({
             <button
               type="button"
               onClick={() => handleNavClick('news')}
-              className={`${navLinkClass(activePage === 'news')} cursor-pointer`}
+              className={`${navLinkClass(activePage === 'news')} cursor-pointer relative inline-flex items-center gap-1.5`}
             >
               News
+              {liveNewsCount > 0 && activePage !== 'news' && (
+                <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold leading-none shadow-sm">
+                  {liveNewsCount}
+                </span>
+              )}
               {activePage === 'news' && <ActiveUnderline />}
             </button>
 
@@ -541,6 +563,12 @@ export function HeaderNav({
                       }`}
                     >
                       <span>{label}</span>
+                      {page === 'news' && liveNewsCount > 0 && activePage !== 'news' && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-500 text-white text-[10px] font-bold">
+                          <Bell className="h-2.5 w-2.5" />
+                          {liveNewsCount} live
+                        </span>
+                      )}
                     </button>
                   ))}
 

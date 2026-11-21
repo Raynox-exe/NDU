@@ -189,34 +189,56 @@ export function ServicesView({
 }
 
 export function NewsEventsView({ onOpenJournals: _onOpenJournals }: { onOpenJournals: () => void }) {
-  const [newsItems, setNewsItems] = useState<DynamicNews[]>(() =>
-    LIBRARY_NEWS_EVENTS.map((item) => ({
-      id: item.id,
-      title: item.title,
-      category: item.category,
-      date: item.date,
-      venue: item.venue,
-      summary: item.summary,
-      content: item.summary,
-      is_active: true,
-      created_at: new Date().toISOString(),
-    }))
-  );
+  // Start with empty array — static fallback only used if API fetch fails and returns nothing
+  const [newsItems, setNewsItems] = useState<DynamicNews[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [selectedNews, setSelectedNews] = useState<DynamicNews | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const fetchNews = async () => {
+  const fetchNews = async (silent = false) => {
+    if (!silent) setIsLoading(true);
     setIsRefreshing(true);
     try {
       const res = await api.public.getNews();
       if (res.success && res.news && res.news.length > 0) {
         setNewsItems(res.news.filter((n) => n.is_active !== false));
+      } else if (!silent) {
+        // Fall back to static data if API returns nothing
+        setNewsItems(
+          LIBRARY_NEWS_EVENTS.map((item) => ({
+            id: item.id,
+            title: item.title,
+            category: item.category,
+            date: item.date,
+            venue: item.venue,
+            summary: item.summary,
+            content: item.summary,
+            is_active: true,
+            created_at: new Date().toISOString(),
+          }))
+        );
       }
     } catch (err) {
       console.error('Error fetching public news:', err);
+      if (!silent) {
+        setNewsItems(
+          LIBRARY_NEWS_EVENTS.map((item) => ({
+            id: item.id,
+            title: item.title,
+            category: item.category,
+            date: item.date,
+            venue: item.venue,
+            summary: item.summary,
+            content: item.summary,
+            is_active: true,
+            created_at: new Date().toISOString(),
+          }))
+        );
+      }
     } finally {
+      setIsLoading(false);
       setIsRefreshing(false);
     }
   };
@@ -265,7 +287,9 @@ export function NewsEventsView({ onOpenJournals: _onOpenJournals }: { onOpenJour
               </span>
               <span>Live Announcements &amp; University Bulletins</span>
               <span className="text-stone-300">·</span>
-              <span className="text-emerald-700 font-mono text-[11px]">{newsItems.length} Published</span>
+              <span className="text-emerald-700 font-mono text-[11px]">
+                {isLoading ? '…' : `${newsItems.length} Published`}
+              </span>
             </div>
 
             <h1 className="font-serif text-3xl sm:text-4xl font-semibold tracking-tight text-[#1C1917] [text-wrap:balance]">
@@ -279,7 +303,7 @@ export function NewsEventsView({ onOpenJournals: _onOpenJournals }: { onOpenJour
 
           <button
             type="button"
-            onClick={fetchNews}
+            onClick={() => fetchNews()}
             disabled={isRefreshing}
             className="inline-flex items-center gap-2 rounded-lg border border-stone-300 bg-white px-3.5 py-2 text-xs font-semibold text-stone-700 hover:bg-stone-50 active:scale-98 transition-all cursor-pointer self-start md:self-auto shadow-xs shrink-0"
             title="Refresh latest announcements"
@@ -290,8 +314,31 @@ export function NewsEventsView({ onOpenJournals: _onOpenJournals }: { onOpenJour
         </div>
       </RevealOnLoad>
 
+      {/* Loading skeleton */}
+      {isLoading && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="rounded-xl border border-stone-200 bg-white p-6 space-y-4 animate-pulse">
+              <div className="flex gap-2">
+                <div className="h-5 w-28 bg-stone-200 rounded" />
+                <div className="h-5 w-24 bg-stone-100 rounded" />
+              </div>
+              <div className="space-y-2">
+                <div className="h-6 w-full bg-stone-200 rounded" />
+                <div className="h-5 w-4/5 bg-stone-100 rounded" />
+              </div>
+              <div className="h-12 w-full bg-stone-100 rounded" />
+              <div className="flex justify-between pt-2 border-t border-stone-100">
+                <div className="h-4 w-32 bg-stone-100 rounded" />
+                <div className="h-4 w-24 bg-stone-200 rounded" />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Latest Featured News Banner (if present) */}
-      {latestNews && (
+      {!isLoading && latestNews && (
         <div className="rounded-xl border border-emerald-200 bg-gradient-to-r from-emerald-50/70 to-stone-50 p-5 sm:p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-1.5 flex-1">
             <div className="flex items-center gap-2 text-xs font-semibold text-emerald-800">
@@ -320,6 +367,7 @@ export function NewsEventsView({ onOpenJournals: _onOpenJournals }: { onOpenJour
       )}
 
       {/* Filter and Search Bar */}
+      {!isLoading && (
       <div className="rounded-xl border border-stone-200 bg-white p-4 sm:p-5 shadow-xs space-y-3">
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
           <div className="relative flex-1">
@@ -390,9 +438,10 @@ export function NewsEventsView({ onOpenJournals: _onOpenJournals }: { onOpenJour
           })}
         </div>
       </div>
+      )}
 
       {/* News Cards Grid */}
-      {filteredNews.length === 0 ? (
+      {!isLoading && (filteredNews.length === 0 ? (
         <div className="rounded-xl border border-stone-200 bg-white p-12 text-center space-y-3">
           <Newspaper className="h-10 w-10 text-stone-300 mx-auto" />
           <h3 className="font-serif text-lg font-semibold text-stone-800">
@@ -489,7 +538,7 @@ export function NewsEventsView({ onOpenJournals: _onOpenJournals }: { onOpenJour
             );
           })}
         </div>
-      )}
+      ))}
 
       {/* News Detail Modal */}
       <AnimatePresence>
