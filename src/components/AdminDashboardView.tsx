@@ -26,6 +26,8 @@ import {
   LogOut,
   LayoutDashboard,
   ChevronRight,
+  GraduationCap,
+  Filter,
 } from 'lucide-react';
 import {
   api,
@@ -37,6 +39,7 @@ import {
   type DynamicLink,
   type DynamicNews,
 } from '../services/api';
+import { FACULTY_CATALOGS, TOTAL_JOURNAL_COUNT } from '../data/journalsIndex';
 
 interface AdminDashboardViewProps {
   user: User;
@@ -116,6 +119,25 @@ export function AdminDashboardView({ user, onLogout, onNavigateHome }: AdminDash
   // Search filter for links
   const [linkFilterSection, setLinkFilterSection] = useState<string>('all');
   const [linkSearchQuery, setLinkSearchQuery] = useState('');
+
+  // E-Journal Catalog filter
+  const [catalogFacultyFilter, setCatalogFacultyFilter] = useState('all');
+  const [catalogSearch, setCatalogSearch] = useState('');
+
+  // Article edit modal
+  const [showArticleEditModal, setShowArticleEditModal] = useState(false);
+  const [editingArticle, setEditingArticle] = useState<Article | null>(null);
+  const [articleEditTitle, setArticleEditTitle] = useState('');
+  const [articleEditAuthors, setArticleEditAuthors] = useState('');
+  const [articleEditPageRange, setArticleEditPageRange] = useState('');
+
+  // Journal edit modal
+  const [showJournalEditModal, setShowJournalEditModal] = useState(false);
+  const [editingJournalItem, setEditingJournalItem] = useState<JournalIssue | null>(null);
+  const [journalEditName, setJournalEditName] = useState('');
+  const [journalEditYear, setJournalEditYear] = useState(2026);
+  const [journalEditVol, setJournalEditVol] = useState(14);
+  const [journalEditIssue, setJournalEditIssue] = useState(1);
 
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
     setToast({ message, type });
@@ -479,6 +501,74 @@ export function AdminDashboardView({ user, onLogout, onNavigateHome }: AdminDash
     }
   };
 
+  // E-Journal Catalog toggle
+  const handleToggleJournalOverride = async (journalId: string, currentlyActive: boolean) => {
+    const newActive = !currentlyActive;
+    try {
+      await api.admin.toggleJournalOverride(journalId, newActive);
+      setOverrides((prev) => ({ ...prev, [journalId]: { is_active: newActive } }));
+      showToast(`Journal ${newActive ? 'enabled' : 'hidden'} on Digital Library.`);
+    } catch {
+      showToast('Failed to update journal visibility.', 'error');
+    }
+  };
+
+  // Article edit handlers
+  const handleOpenArticleEdit = (a: Article) => {
+    setEditingArticle(a);
+    setArticleEditTitle(a.title);
+    setArticleEditAuthors(Array.isArray(a.authors) ? (a.authors as string[]).join(', ') : String(a.authors ?? ''));
+    setArticleEditPageRange(a.page_range ?? '');
+    setShowArticleEditModal(true);
+  };
+  const handleSaveArticleEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingArticle) return;
+    try {
+      const res = await api.admin.updateArticle(editingArticle.id, {
+        title: articleEditTitle,
+        authors: articleEditAuthors,
+        page_range: articleEditPageRange,
+      });
+      if (res.success) {
+        showToast('Article updated.');
+        setShowArticleEditModal(false);
+        loadAllData();
+      } else showToast(res.error || 'Failed to update article', 'error');
+    } catch {
+      showToast('Error updating article', 'error');
+    }
+  };
+
+  // Journal issue edit handlers
+  const handleOpenJournalEdit = (j: JournalIssue) => {
+    setEditingJournalItem(j);
+    setJournalEditName(j.name);
+    setJournalEditYear(j.publication_year ?? 2026);
+    setJournalEditVol(j.volume_no ?? 14);
+    setJournalEditIssue(j.issue_no ?? 1);
+    setShowJournalEditModal(true);
+  };
+  const handleSaveJournalEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingJournalItem) return;
+    try {
+      const res = await api.admin.updateJournal(editingJournalItem.id, {
+        name: journalEditName,
+        publication_year: journalEditYear,
+        volume_no: journalEditVol,
+        issue_no: journalEditIssue,
+      });
+      if (res.success) {
+        showToast('Journal issue updated.');
+        setShowJournalEditModal(false);
+        loadAllData();
+      } else showToast(res.error || 'Failed to update journal', 'error');
+    } catch {
+      showToast('Error updating journal', 'error');
+    }
+  };
+
   // Filtered links
   const filteredLinks = links.filter((l) => {
     const matchesSection = linkFilterSection === 'all' || l.section_id === linkFilterSection;
@@ -507,6 +597,7 @@ export function AdminDashboardView({ user, onLogout, onNavigateHome }: AdminDash
     { id: 'articles', label: 'Published Articles', icon: Rocket, badge: articles.length || null, badgeColor: 'bg-emerald-600' },
     { id: 'links', label: 'Links & Resources', icon: Link2, badge: links.length || null, badgeColor: 'bg-stone-500' },
     { id: 'news', label: 'News & Bulletins', icon: Newspaper, badge: news.length || null, badgeColor: 'bg-purple-600' },
+    { id: 'overrides', label: 'E-Journal Catalog', icon: GraduationCap, badge: TOTAL_JOURNAL_COUNT, badgeColor: 'bg-indigo-600' },
     { id: 'users', label: 'Users & Roles', icon: Users, badge: users.length || null, badgeColor: 'bg-stone-500' },
   ] as const;
 
@@ -919,6 +1010,14 @@ export function AdminDashboardView({ user, onLogout, onNavigateHome }: AdminDash
                           ) : (
                             <span className="text-xs font-semibold text-emerald-700">✓ Live on Website</span>
                           )}
+                          <button
+                            type="button"
+                            onClick={() => handleOpenJournalEdit(j)}
+                            className="rounded bg-[#0B3B69] px-2.5 py-1 text-xs font-semibold text-white hover:bg-[#082847] cursor-pointer"
+                            title="Edit Journal Issue"
+                          >
+                            Edit
+                          </button>
                         </td>
                       </tr>
                     );
@@ -1055,6 +1154,14 @@ export function AdminDashboardView({ user, onLogout, onNavigateHome }: AdminDash
                           <ExternalLink className="h-4 w-4 inline" />
                         </a>
                       )}
+                      <button
+                        type="button"
+                        onClick={() => handleOpenArticleEdit(art)}
+                        className="rounded bg-[#0B3B69] px-2.5 py-1 text-xs font-semibold text-white hover:bg-[#082847] cursor-pointer"
+                        title="Edit Metadata"
+                      >
+                        Edit
+                      </button>
                       <button
                         type="button"
                         onClick={() => handleDeleteArticle(art.id)}
@@ -1471,7 +1578,126 @@ export function AdminDashboardView({ user, onLogout, onNavigateHome }: AdminDash
       )}
 
       {/* ==================================================== */}
-      {/* TAB 7: USERS & ROLES */}
+      {/* TAB 7: E-JOURNAL CATALOG OVERRIDES */}
+      {/* ==================================================== */}
+      {activeTab === 'overrides' && (
+        <div className="space-y-6">
+          <div className="rounded-xl border border-stone-200 bg-white p-6 shadow-sm space-y-4">
+            <div className="border-b border-stone-200 pb-4 space-y-1">
+              <h2 className="font-sans text-xl font-bold text-stone-900">
+                Departmental E-Journal Catalog Control
+              </h2>
+              <p className="text-xs text-stone-500">
+                Enable or disable individual open-access journals from appearing in the Digital Library.
+                Covers {TOTAL_JOURNAL_COUNT}+ titles across all NDU faculties and departments.
+              </p>
+            </div>
+
+            {/* Faculty filter + search */}
+            <div className="flex flex-col sm:flex-row items-center gap-3 bg-stone-50 p-3 rounded-lg border border-stone-200">
+              <select
+                value={catalogFacultyFilter}
+                onChange={(e) => setCatalogFacultyFilter(e.target.value)}
+                className="rounded border border-stone-300 bg-white px-3 py-1.5 text-xs text-stone-900 outline-none cursor-pointer"
+              >
+                <option value="all">All Faculties ({TOTAL_JOURNAL_COUNT} journals)</option>
+                {FACULTY_CATALOGS.map((f) => (
+                  <option key={f.id} value={f.id}>{f.name}</option>
+                ))}
+              </select>
+              <div className="relative flex-1 w-full">
+                <Search className="absolute left-2.5 top-2 h-3.5 w-3.5 text-stone-400" />
+                <input
+                  type="text"
+                  placeholder="Search journals by title or ISSN…"
+                  value={catalogSearch}
+                  onChange={(e) => setCatalogSearch(e.target.value)}
+                  className="w-full rounded border border-stone-300 bg-white pl-8 pr-3 py-1.5 text-xs text-stone-900 outline-none"
+                />
+              </div>
+            </div>
+
+            {/* Faculty sections */}
+            {FACULTY_CATALOGS
+              .filter((f) => catalogFacultyFilter === 'all' || f.id === catalogFacultyFilter)
+              .map((faculty) => {
+                const facultyJournalCount = faculty.departments.reduce((s, d) => s + d.journals.length, 0);
+                return (
+                  <div key={faculty.id} className="space-y-3">
+                    <div className="flex items-center gap-2 pt-2 border-t border-stone-100">
+                      <GraduationCap className="h-4 w-4 text-indigo-600 shrink-0" />
+                      <h3 className="font-bold text-sm text-stone-900">{faculty.name}</h3>
+                      <span className="ml-auto text-xs text-stone-500">{facultyJournalCount} journal{facultyJournalCount !== 1 ? 's' : ''}</span>
+                    </div>
+                    {faculty.departments.map((dept) => {
+                      const deptJournals = dept.journals.filter((j) =>
+                        !catalogSearch.trim() ||
+                        j.title.toLowerCase().includes(catalogSearch.toLowerCase()) ||
+                        (j.issn && j.issn.includes(catalogSearch)) ||
+                        (j.eissn && j.eissn.includes(catalogSearch))
+                      );
+                      if (deptJournals.length === 0) return null;
+                      return (
+                        <div key={dept.id} className="rounded-lg border border-stone-200 overflow-hidden">
+                          <div className="bg-indigo-50 border-b border-indigo-100 px-4 py-2 flex items-center justify-between">
+                            <span className="text-xs font-bold text-indigo-900">{dept.name}</span>
+                            <span className="text-[10px] text-indigo-600">{deptJournals.length} journal{deptJournals.length !== 1 ? 's' : ''}</span>
+                          </div>
+                          <table className="w-full text-left text-xs border-collapse">
+                            <thead>
+                              <tr className="border-b border-stone-200 bg-stone-50 text-stone-600 font-semibold uppercase tracking-wider">
+                                <th className="py-2 px-3">Journal Title</th>
+                                <th className="py-2 px-3 hidden sm:table-cell">ISSN / eISSN</th>
+                                <th className="py-2 px-3">Visibility</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-stone-100">
+                              {deptJournals.map((j) => {
+                                const isActive = overrides[j.id]?.is_active !== false;
+                                return (
+                                  <tr key={j.id} className={`transition-colors ${isActive ? 'hover:bg-stone-50/60' : 'bg-red-50/40'}`}>
+                                    <td className="py-2.5 px-3 font-medium text-stone-900 max-w-xs">
+                                      {j.url ? (
+                                        <a href={j.url} target="_blank" rel="noopener noreferrer" className="text-[#0B3B69] hover:underline inline-flex items-center gap-1">
+                                          {j.title}<ExternalLink className="h-3 w-3 shrink-0" />
+                                        </a>
+                                      ) : j.title}
+                                    </td>
+                                    <td className="py-2.5 px-3 text-stone-500 font-mono text-[11px] hidden sm:table-cell">
+                                      {[j.issn, j.eissn].filter(Boolean).join(' / ') || '—'}
+                                    </td>
+                                    <td className="py-2.5 px-3">
+                                      <button
+                                        type="button"
+                                        onClick={() => handleToggleJournalOverride(j.id, isActive)}
+                                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold cursor-pointer transition-colors ${
+                                          isActive
+                                            ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
+                                            : 'bg-red-100 text-red-800 hover:bg-red-200'
+                                        }`}
+                                      >
+                                        {isActive
+                                          ? <><Eye className="h-3.5 w-3.5" /><span>Visible</span></>
+                                          : <><EyeOff className="h-3.5 w-3.5" /><span>Hidden</span></>}
+                                      </button>
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })}
+          </div>
+        </div>
+      )}
+
+      {/* ==================================================== */}
+      {/* TAB 8: USERS & ROLES */}
       {/* ==================================================== */}
       {activeTab === 'users' && (
         <div className="rounded-xl border border-stone-200 bg-white overflow-hidden shadow-sm space-y-4 p-6">
@@ -2231,6 +2457,128 @@ export function AdminDashboardView({ user, onLogout, onNavigateHome }: AdminDash
           </div>
         </div>
       )}
+
+      {/* ==================================================== */}
+      {/* ARTICLE EDIT MODAL */}
+      {/* ==================================================== */}
+      {showArticleEditModal && editingArticle && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-stone-200 pb-3">
+              <h3 className="font-sans font-bold text-stone-900 text-base">Edit Article Metadata</h3>
+              <button type="button" onClick={() => setShowArticleEditModal(false)} className="text-stone-400 hover:text-stone-600 cursor-pointer">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <form onSubmit={handleSaveArticleEdit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-stone-700 mb-1">Article Title</label>
+                <input
+                  type="text"
+                  value={articleEditTitle}
+                  onChange={(e) => setArticleEditTitle(e.target.value)}
+                  required
+                  className="w-full rounded border border-stone-300 px-3 py-2 text-sm text-stone-900 outline-none focus:border-[#0B3B69]"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-stone-700 mb-1">Authors (comma-separated)</label>
+                <input
+                  type="text"
+                  value={articleEditAuthors}
+                  onChange={(e) => setArticleEditAuthors(e.target.value)}
+                  className="w-full rounded border border-stone-300 px-3 py-2 text-sm text-stone-900 outline-none focus:border-[#0B3B69]"
+                  placeholder="e.g. Dr. A. Smith, Prof. B. Jones"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-stone-700 mb-1">Page Range</label>
+                <input
+                  type="text"
+                  value={articleEditPageRange}
+                  onChange={(e) => setArticleEditPageRange(e.target.value)}
+                  className="w-full rounded border border-stone-300 px-3 py-2 text-sm text-stone-900 outline-none focus:border-[#0B3B69]"
+                  placeholder="e.g. 1 - 15"
+                />
+              </div>
+              <div className="flex gap-3 justify-end pt-2">
+                <button type="button" onClick={() => setShowArticleEditModal(false)} className="rounded border border-stone-300 px-4 py-2 text-xs font-semibold text-stone-700 hover:bg-stone-50 cursor-pointer">
+                  Cancel
+                </button>
+                <button type="submit" className="rounded bg-[#14452F] px-4 py-2 text-xs font-semibold text-white hover:bg-[#0D3121] cursor-pointer">
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ==================================================== */}
+      {/* JOURNAL ISSUE EDIT MODAL */}
+      {/* ==================================================== */}
+      {showJournalEditModal && editingJournalItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-stone-200 pb-3">
+              <h3 className="font-sans font-bold text-stone-900 text-base">Edit Journal Issue</h3>
+              <button type="button" onClick={() => setShowJournalEditModal(false)} className="text-stone-400 hover:text-stone-600 cursor-pointer">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <form onSubmit={handleSaveJournalEdit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-stone-700 mb-1">Journal Issue Name</label>
+                <input
+                  type="text"
+                  value={journalEditName}
+                  onChange={(e) => setJournalEditName(e.target.value)}
+                  required
+                  className="w-full rounded border border-stone-300 px-3 py-2 text-sm text-stone-900 outline-none focus:border-[#0B3B69]"
+                />
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-stone-700 mb-1">Volume No.</label>
+                  <input
+                    type="number"
+                    value={journalEditVol}
+                    onChange={(e) => setJournalEditVol(Number(e.target.value))}
+                    className="w-full rounded border border-stone-300 px-3 py-2 text-sm text-stone-900 outline-none focus:border-[#0B3B69]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-stone-700 mb-1">Issue No.</label>
+                  <input
+                    type="number"
+                    value={journalEditIssue}
+                    onChange={(e) => setJournalEditIssue(Number(e.target.value))}
+                    className="w-full rounded border border-stone-300 px-3 py-2 text-sm text-stone-900 outline-none focus:border-[#0B3B69]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-stone-700 mb-1">Year</label>
+                  <input
+                    type="number"
+                    value={journalEditYear}
+                    onChange={(e) => setJournalEditYear(Number(e.target.value))}
+                    className="w-full rounded border border-stone-300 px-3 py-2 text-sm text-stone-900 outline-none focus:border-[#0B3B69]"
+                  />
+                </div>
+              </div>
+              <div className="flex gap-3 justify-end pt-2">
+                <button type="button" onClick={() => setShowJournalEditModal(false)} className="rounded border border-stone-300 px-4 py-2 text-xs font-semibold text-stone-700 hover:bg-stone-50 cursor-pointer">
+                  Cancel
+                </button>
+                <button type="submit" className="rounded bg-[#14452F] px-4 py-2 text-xs font-semibold text-white hover:bg-[#0D3121] cursor-pointer">
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
         </main>
       </div>
     </div>
