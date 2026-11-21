@@ -13,6 +13,13 @@ import {
   Building,
   UserCheck,
   Send,
+  Menu,
+  X,
+  RefreshCw,
+  Home,
+  LogOut,
+  LayoutDashboard,
+  ChevronRight,
 } from 'lucide-react';
 import { api, type Submission, type Notification, type User } from '../services/api';
 
@@ -22,8 +29,9 @@ interface MemberDashboardViewProps {
   onNavigateHome: () => void;
 }
 
-export function MemberDashboardView({ user, onLogout }: MemberDashboardViewProps) {
+export function MemberDashboardView({ user, onLogout, onNavigateHome }: MemberDashboardViewProps) {
   const [activeTab, setActiveTab] = useState<'overview' | 'submit' | 'articles' | 'notifications'>('overview');
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
@@ -139,575 +147,243 @@ export function MemberDashboardView({ user, onLogout }: MemberDashboardViewProps
   const underReviewCount = submissions.filter((s) => s.status === 'under_review').length;
   const unreadNotifs = notifications.filter((n) => !n.is_read).length;
 
+  const navItems = [
+    { id: 'overview', label: 'Overview', icon: LayoutDashboard },
+    { id: 'submit', label: 'Submit Manuscript', icon: Upload },
+    {
+      id: 'articles',
+      label: 'My Manuscripts',
+      icon: FileText,
+      badge: submissions.length,
+      badgeColor: 'bg-emerald-600',
+    },
+    {
+      id: 'notifications',
+      label: 'Notifications',
+      icon: Bell,
+      badge: unreadNotifs > 0 ? unreadNotifs : null,
+      badgeColor: 'bg-amber-500',
+    },
+  ];
+
   return (
-    <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-10 py-8 space-y-8 animate-fade-in">
-      {/* Top Header Banner */}
-      <div className="rounded-xl border border-stone-200 bg-white p-6 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1 rounded bg-[#14452F]/10 px-2 py-0.5 text-xs font-semibold text-[#14452F]">
-              <UserCheck className="h-3.5 w-3.5" /> Researcher Portal
-            </span>
-            <span className="text-xs text-stone-500">· NDU Scholarly Transmission System</span>
-          </div>
-          <h1 className="font-serif text-2xl sm:text-3xl font-bold text-stone-900">
-            Welcome, {user.full_name}
-          </h1>
-          <p className="text-xs sm:text-sm text-stone-600">
-            Submit scholarly manuscripts, track editorial status, and receive notifications from the University Library Editorial Board.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => setActiveTab('submit')}
-            className="flex items-center gap-1.5 rounded-md bg-[#14452F] px-4 py-2 text-xs font-semibold text-white hover:bg-[#0D3121] shadow-sm transition-all cursor-pointer"
-          >
-            <Upload className="h-3.5 w-3.5" />
-            <span>Submit Manuscript</span>
-          </button>
-          <button
-            type="button"
-            onClick={onLogout}
-            className="rounded-md border border-stone-300 px-3 py-2 text-xs font-medium text-stone-700 hover:bg-stone-50 cursor-pointer"
-          >
-            Sign Out
-          </button>
-        </div>
-      </div>
-
-      {/* Navigation Tabs */}
-      <div className="flex flex-wrap items-center gap-2 border-b border-stone-200 pb-2">
-        <button
-          type="button"
-          onClick={() => setActiveTab('overview')}
-          className={`flex items-center gap-1.5 rounded-md px-3.5 py-2 text-xs font-semibold transition-colors cursor-pointer ${
-            activeTab === 'overview'
-              ? 'bg-[#14452F] text-white'
-              : 'text-stone-700 hover:bg-stone-100'
-          }`}
-        >
-          <FileText className="h-4 w-4" />
-          <span>Overview</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveTab('submit')}
-          className={`flex items-center gap-1.5 rounded-md px-3.5 py-2 text-xs font-semibold transition-colors cursor-pointer ${
-            activeTab === 'submit'
-              ? 'bg-[#14452F] text-white'
-              : 'text-stone-700 hover:bg-stone-100'
-          }`}
-        >
-          <Upload className="h-4 w-4" />
-          <span>Submit Manuscript</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveTab('articles')}
-          className={`flex items-center gap-1.5 rounded-md px-3.5 py-2 text-xs font-semibold transition-colors cursor-pointer ${
-            activeTab === 'articles'
-              ? 'bg-[#14452F] text-white'
-              : 'text-stone-700 hover:bg-stone-100'
-          }`}
-        >
-          <FileCheck className="h-4 w-4" />
-          <span>My Manuscripts ({submissions.length})</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveTab('notifications')}
-          className={`relative flex items-center gap-1.5 rounded-md px-3.5 py-2 text-xs font-semibold transition-colors cursor-pointer ${
-            activeTab === 'notifications'
-              ? 'bg-[#14452F] text-white'
-              : 'text-stone-700 hover:bg-stone-100'
-          }`}
-        >
-          <Bell className="h-4 w-4" />
-          <span>Notifications</span>
-          {unreadNotifs > 0 && (
-            <span className="ml-1 rounded-full bg-amber-500 px-1.5 py-0.2 text-[10px] font-bold text-white">
-              {unreadNotifs}
-            </span>
-          )}
-        </button>
-      </div>
-
-      {/* TAB 1: OVERVIEW */}
-      {activeTab === 'overview' && (
-        <div className="space-y-6">
-          {/* Stat Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="rounded-xl border border-stone-200 bg-white p-5 shadow-sm space-y-1 border-l-4 border-l-[#14452F]">
-              <span className="text-xs font-semibold text-stone-500 uppercase tracking-wider">
-                Total Submissions
-              </span>
-              <div className="text-3xl font-bold text-stone-900">{submissions.length}</div>
-              <p className="text-[11px] text-stone-500">Transmitted research articles</p>
-            </div>
-
-            <div className="rounded-xl border border-stone-200 bg-white p-5 shadow-sm space-y-1 border-l-4 border-l-amber-500">
-              <span className="text-xs font-semibold text-stone-500 uppercase tracking-wider">
-                Pending Editorial Review
-              </span>
-              <div className="text-3xl font-bold text-amber-600">{pendingCount}</div>
-              <p className="text-[11px] text-stone-500">Awaiting reviewer assignment</p>
-            </div>
-
-            <div className="rounded-xl border border-stone-200 bg-white p-5 shadow-sm space-y-1 border-l-4 border-l-blue-600">
-              <span className="text-xs font-semibold text-stone-500 uppercase tracking-wider">
-                Under Peer Review
-              </span>
-              <div className="text-3xl font-bold text-blue-600">{underReviewCount}</div>
-              <p className="text-[11px] text-stone-500">Active evaluation in progress</p>
-            </div>
-
-            <div className="rounded-xl border border-stone-200 bg-white p-5 shadow-sm space-y-1 border-l-4 border-l-emerald-600">
-              <span className="text-xs font-semibold text-stone-500 uppercase tracking-wider">
-                Accepted &amp; Published
-              </span>
-              <div className="text-3xl font-bold text-emerald-600">{acceptedCount}</div>
-              <p className="text-[11px] text-stone-500">Approved for Journal Volumes</p>
-            </div>
-          </div>
-
-          {/* Quick submission trigger callout */}
-          <div className="rounded-xl border border-[#14452F]/20 bg-gradient-to-r from-[#14452F]/5 to-transparent p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="space-y-1">
-              <h3 className="font-serif text-lg font-bold text-[#14452F]">
-                Ready to submit an academic research paper?
-              </h3>
-              <p className="text-xs text-stone-600 max-w-2xl">
-                Submit your manuscript in Word (.doc, .docx) or PDF format. The Niger Delta University Library review committee will examine the study and transmit official notifications to your dashboard.
-              </p>
-            </div>
+    <div className="min-h-screen bg-stone-100 animate-fade-in">
+      {/* ── Top Header Bar (matches Admin Console) ── */}
+      <header className="bg-[#0D3121] text-white shadow-md sticky top-16 sm:top-20 z-30">
+        <div className="flex items-center justify-between px-4 sm:px-6 h-14">
+          {/* Left: hamburger + branding */}
+          <div className="flex items-center gap-3">
             <button
               type="button"
-              onClick={() => setActiveTab('submit')}
-              className="rounded-md bg-[#14452F] px-4 py-2 text-xs font-semibold text-white hover:bg-[#0D3121] shadow transition-all cursor-pointer whitespace-nowrap"
+              onClick={() => setSidebarOpen((v) => !v)}
+              className="p-1.5 rounded hover:bg-white/10 transition-colors cursor-pointer"
+              aria-label="Toggle sidebar"
             >
-              Start New Submission →
+              {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
+            <div className="flex items-center gap-2">
+              <UserCheck className="h-5 w-5 text-emerald-300" />
+              <span className="font-serif font-bold text-sm sm:text-base tracking-tight leading-tight">
+                NDU Library <span className="text-emerald-300 font-normal">· Researcher Portal</span>
+              </span>
+            </div>
           </div>
 
-          {/* Recent Submissions Snippet */}
-          <div className="rounded-xl border border-stone-200 bg-white overflow-hidden shadow-sm">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-stone-200 bg-stone-50">
-              <h3 className="font-serif text-base font-semibold text-stone-900">
-                Recent Submissions
-              </h3>
+          {/* Right: actions */}
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={loadData}
+              title="Sync / Refresh data"
+              className="flex items-center gap-1.5 rounded px-2.5 py-1.5 text-xs font-medium text-white/80 hover:bg-white/10 transition-colors cursor-pointer"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">Sync</span>
+            </button>
+            {onNavigateHome && (
               <button
                 type="button"
-                onClick={() => setActiveTab('articles')}
-                className="text-xs font-semibold text-[#0B3B69] hover:underline cursor-pointer"
+                onClick={onNavigateHome}
+                className="flex items-center gap-1.5 rounded px-2.5 py-1.5 text-xs font-medium text-white/80 hover:bg-white/10 transition-colors cursor-pointer"
               >
-                View all ({submissions.length})
+                <Home className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Public Site</span>
               </button>
-            </div>
-
-            <div className="divide-y divide-stone-100">
-              {loading ? (
-                <div className="p-8 text-center text-xs text-stone-500">Loading submissions...</div>
-              ) : submissions.length === 0 ? (
-                <div className="p-8 text-center text-xs text-stone-500">
-                  No manuscripts submitted yet. Click &quot;Submit Manuscript&quot; to begin.
-                </div>
-              ) : (
-                submissions.slice(0, 3).map((sub) => (
-                  <div key={sub.id} className="p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                    <div className="space-y-1 max-w-2xl">
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-xs text-stone-800">{sub.title}</span>
-                      </div>
-                      <p className="text-xs text-stone-500 line-clamp-1">{sub.abstract}</p>
-                      <div className="flex items-center gap-3 text-[11px] text-stone-400">
-                        <span>Area: {sub.subject_area}</span>
-                        <span>·</span>
-                        <span>{new Date(sub.submitted_at).toLocaleDateString()}</span>
-                      </div>
-                    </div>
-
-                    <div className="shrink-0">
-                      <span
-                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold uppercase tracking-wider ${
-                          sub.status === 'accepted'
-                            ? 'bg-emerald-100 text-emerald-800'
-                            : sub.status === 'rejected'
-                            ? 'bg-red-100 text-red-800'
-                            : sub.status === 'under_review'
-                            ? 'bg-blue-100 text-blue-800'
-                            : 'bg-amber-100 text-amber-800'
-                        }`}
-                      >
-                        {sub.status === 'accepted' && <CheckCircle2 className="h-3 w-3" />}
-                        {sub.status === 'pending' && <Clock className="h-3 w-3" />}
-                        {sub.status === 'rejected' && <AlertCircle className="h-3 w-3" />}
-                        {sub.status.replace('_', ' ')}
-                      </span>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
+            )}
+            <button
+              type="button"
+              onClick={onLogout}
+              className="flex items-center gap-1.5 rounded px-2.5 py-1.5 text-xs font-medium bg-red-700/80 hover:bg-red-700 text-white transition-colors cursor-pointer"
+            >
+              <LogOut className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Sign Out</span>
+            </button>
           </div>
         </div>
-      )}
+      </header>
 
-      {/* TAB 2: SUBMIT MANUSCRIPT */}
-      {activeTab === 'submit' && (
-        <div className="rounded-xl border border-stone-200 bg-white p-6 sm:p-8 shadow-sm max-w-4xl mx-auto space-y-6">
-          <div className="border-b border-stone-200 pb-4 space-y-1">
-            <h2 className="font-serif text-2xl font-bold text-stone-900">
-              Submit Research Manuscript
-            </h2>
-            <p className="text-xs text-stone-500">
-              Provide comprehensive bibliographic details and manuscript documentation for editorial board evaluation.
+      {/* ── Main body: sidebar + content (matches Admin Console layout) ── */}
+      <div className="flex relative items-start">
+        {/* ── Sidebar ── */}
+        <aside
+          className={`${
+            sidebarOpen ? 'w-64' : 'w-0 overflow-hidden'
+          } flex-shrink-0 transition-all duration-300 bg-[#14452F] sticky top-[7.5rem] sm:top-[8.5rem] h-[calc(100vh-7.5rem)] sm:h-[calc(100vh-8.5rem)] flex flex-col shadow-lg z-20`}
+        >
+          {/* Nav items */}
+          <nav className="flex-1 py-4 px-3 space-y-0.5 overflow-y-auto">
+            <p className="px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-emerald-400/70">
+              Researcher Portal
             </p>
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = activeTab === item.id;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => setActiveTab(item.id as any)}
+                  className={`w-full flex items-center justify-between gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 cursor-pointer ${
+                    isActive
+                      ? 'bg-white text-[#14452F] shadow-sm font-semibold'
+                      : 'text-white/80 hover:bg-white/10 hover:text-white'
+                  }`}
+                >
+                  <span className="flex items-center gap-2.5">
+                    <Icon className="h-4 w-4 flex-shrink-0" />
+                    <span className="truncate">{item.label}</span>
+                  </span>
+                  {item.badge != null && (
+                    <span
+                      className={`flex-shrink-0 min-w-[20px] h-5 px-1.5 rounded-full text-[10px] font-bold flex items-center justify-center ${
+                        isActive ? 'bg-[#14452F] text-white' : `${item.badgeColor || 'bg-stone-500'} text-white`
+                      }`}
+                    >
+                      {item.badge}
+                    </span>
+                  )}
+                  {isActive && <ChevronRight className="h-3.5 w-3.5 flex-shrink-0 text-[#14452F]" />}
+                </button>
+              );
+            })}
+          </nav>
+
+          {/* Sidebar footer */}
+          <div className="px-4 py-4 border-t border-white/10 space-y-1.5 text-white/70 text-xs">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+              <span className="font-medium text-white truncate">{user.full_name}</span>
+            </div>
+            <div className="text-[11px] text-white/50 truncate">{user.email}</div>
           </div>
+        </aside>
 
-          {submitFeedback && (
-            <div
-              className={`p-4 rounded-lg text-xs font-medium border flex items-start gap-2.5 ${
-                submitFeedback.type === 'success'
-                  ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                  : 'bg-red-50 text-red-800 border-red-200'
-              }`}
-            >
-              {submitFeedback.type === 'success' ? (
-                <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600 mt-0.5" />
-              ) : (
-                <AlertCircle className="h-4 w-4 shrink-0 text-red-600 mt-0.5" />
-              )}
-              <span>{submitFeedback.message}</span>
-            </div>
-          )}
-
-          <form onSubmit={handleManuscriptSubmit} className="space-y-6">
-            {/* Section 1: Article Info */}
-            <div className="space-y-4">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-[#14452F] flex items-center gap-1.5 border-b border-stone-100 pb-2">
-                <FileText className="h-4 w-4" /> 1. Article Information
-              </h3>
-
-              <div>
-                <label className="block text-xs font-semibold text-stone-700 mb-1">
-                  Full Article Title *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="e.g. Assessment of Digital Library Utilization Patterns among Faculty Members"
-                  className="w-full rounded-md border border-stone-300 px-3.5 py-2 text-sm text-stone-900 placeholder:text-stone-400 focus:border-[#14452F] focus:ring-1 focus:ring-[#14452F] outline-none"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-stone-700 mb-1">
-                    Subject Area / Faculty Discipline *
-                  </label>
-                  <select
-                    value={subjectArea}
-                    onChange={(e) => setSubjectArea(e.target.value)}
-                    className="w-full rounded-md border border-stone-300 px-3.5 py-2 text-sm text-stone-900 bg-white focus:border-[#14452F] focus:ring-1 focus:ring-[#14452F] outline-none"
-                  >
-                    <option value="Environmental Science">Environmental Science &amp; Ecology</option>
-                    <option value="Agriculture">Agriculture, Fisheries &amp; Forestry</option>
-                    <option value="Medical Sciences">Medical, Nursing &amp; Health Sciences</option>
-                    <option value="Law">Law &amp; Legal Studies</option>
-                    <option value="Education">Education &amp; Library Science</option>
-                    <option value="Engineering">Engineering &amp; Technology</option>
-                    <option value="Social Sciences">Social Sciences &amp; Economics</option>
-                    <option value="Arts & Humanities">Arts, History &amp; Humanities</option>
-                    <option value="Peace & Conflict Resolution">Peace &amp; Conflict Resolution</option>
-                    <option value="Other">Other (Specify Custom Area)</option>
-                  </select>
-                </div>
-
-                {subjectArea === 'Other' && (
-                  <div>
-                    <label className="block text-xs font-semibold text-stone-700 mb-1">
-                      Specify Custom Subject Area *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={customArea}
-                      onChange={(e) => setCustomArea(e.target.value)}
-                      placeholder="e.g. Marine Biotechnology"
-                      className="w-full rounded-md border border-stone-300 px-3.5 py-2 text-sm text-stone-900 placeholder:text-stone-400 focus:border-[#14452F] focus:ring-1 focus:ring-[#14452F] outline-none"
-                    />
+        {/* ── Content area ── */}
+        <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 space-y-6">
+          {/* TAB 1: OVERVIEW */}
+          {activeTab === 'overview' && (
+            <div className="space-y-6">
+              {/* Welcome card */}
+              <div className="rounded-xl border border-stone-200 bg-white p-6 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="inline-flex items-center gap-1 rounded bg-[#14452F]/10 px-2 py-0.5 text-xs font-semibold text-[#14452F]">
+                      <UserCheck className="h-3.5 w-3.5" /> Researcher Console
+                    </span>
+                    <span className="text-xs text-stone-500">· Scholarly Manuscript Transmission System</span>
                   </div>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-stone-700 mb-1">
-                  Abstract * (Maximum 500 words)
-                </label>
-                <textarea
-                  required
-                  rows={5}
-                  value={abstract}
-                  onChange={(e) => setAbstract(e.target.value)}
-                  placeholder="Provide a concise summary detailing research objectives, methodology, core findings, and recommendations..."
-                  className="w-full rounded-md border border-stone-300 px-3.5 py-2 text-sm text-stone-900 placeholder:text-stone-400 focus:border-[#14452F] focus:ring-1 focus:ring-[#14452F] outline-none"
-                />
-              </div>
-            </div>
-
-            {/* Section 2: Author Details */}
-            <div className="space-y-4 pt-2">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-[#14452F] flex items-center gap-1.5 border-b border-stone-100 pb-2">
-                <UserCheck className="h-4 w-4" /> 2. Primary Author &amp; Co-Authors
-              </h3>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-stone-700 mb-1">
-                    Primary Author Name *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={authorName}
-                    onChange={(e) => setAuthorName(e.target.value)}
-                    placeholder="Full name with academic title"
-                    className="w-full rounded-md border border-stone-300 px-3.5 py-2 text-sm text-stone-900 focus:border-[#14452F] focus:ring-1 focus:ring-[#14452F] outline-none"
-                  />
+                  <h1 className="font-serif text-2xl sm:text-3xl font-bold text-stone-900">
+                    Welcome, {user.full_name}
+                  </h1>
+                  <p className="text-xs sm:text-sm text-stone-600">
+                    Submit scholarly manuscripts, track editorial status, and receive notifications from the University Library Editorial Board.
+                  </p>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-stone-700 mb-1">
-                    Author Email *
-                  </label>
-                  <input
-                    type="email"
-                    required
-                    value={authorEmail}
-                    onChange={(e) => setAuthorEmail(e.target.value)}
-                    placeholder="institutional@ndu.edu.ng"
-                    className="w-full rounded-md border border-stone-300 px-3.5 py-2 text-sm text-stone-900 focus:border-[#14452F] focus:ring-1 focus:ring-[#14452F] outline-none"
-                  />
-                </div>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('submit')}
+                  className="flex items-center gap-1.5 rounded-md bg-[#14452F] px-4 py-2.5 text-xs font-semibold text-white hover:bg-[#0D3121] shadow-sm transition-all cursor-pointer whitespace-nowrap"
+                >
+                  <Upload className="h-3.5 w-3.5" />
+                  <span>Submit New Manuscript</span>
+                </button>
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-stone-700 mb-1">
-                  Institutional Affiliation &amp; Department *
-                </label>
-                <div className="relative">
-                  <Building className="absolute left-3 top-2.5 h-4 w-4 text-stone-400" />
-                  <input
-                    type="text"
-                    required
-                    value={authorInstitute}
-                    onChange={(e) => setAuthorInstitute(e.target.value)}
-                    placeholder="e.g. Faculty of Agricultural Technology, Niger Delta University"
-                    className="w-full rounded-md border border-stone-300 pl-9 pr-3 py-2 text-sm text-stone-900 focus:border-[#14452F] focus:ring-1 focus:ring-[#14452F] outline-none"
-                  />
+              {/* Status Metrics */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="rounded-xl border border-stone-200 bg-white p-5 shadow-sm space-y-2">
+                  <div className="flex items-center justify-between text-stone-500">
+                    <span className="text-xs font-semibold uppercase tracking-wider">Total Transmitted</span>
+                    <FileText className="h-4 w-4 text-[#14452F]" />
+                  </div>
+                  <div className="text-2xl font-bold font-serif text-stone-900">{submissions.length}</div>
+                  <p className="text-[11px] text-stone-500">Manuscripts registered in system</p>
+                </div>
+
+                <div className="rounded-xl border border-stone-200 bg-white p-5 shadow-sm space-y-2">
+                  <div className="flex items-center justify-between text-stone-500">
+                    <span className="text-xs font-semibold uppercase tracking-wider">Pending Review</span>
+                    <Clock className="h-4 w-4 text-amber-600" />
+                  </div>
+                  <div className="text-2xl font-bold font-serif text-amber-600">{pendingCount}</div>
+                  <p className="text-[11px] text-stone-500">Awaiting editorial assessment</p>
+                </div>
+
+                <div className="rounded-xl border border-stone-200 bg-white p-5 shadow-sm space-y-2">
+                  <div className="flex items-center justify-between text-stone-500">
+                    <span className="text-xs font-semibold uppercase tracking-wider">Under Editorial Review</span>
+                    <AlertCircle className="h-4 w-4 text-blue-600" />
+                  </div>
+                  <div className="text-2xl font-bold font-serif text-blue-600">{underReviewCount}</div>
+                  <p className="text-[11px] text-stone-500">With peer review committee</p>
+                </div>
+
+                <div className="rounded-xl border border-stone-200 bg-white p-5 shadow-sm space-y-2">
+                  <div className="flex items-center justify-between text-stone-500">
+                    <span className="text-xs font-semibold uppercase tracking-wider">Accepted for Volume</span>
+                    <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                  </div>
+                  <div className="text-2xl font-bold font-serif text-emerald-700">{acceptedCount}</div>
+                  <p className="text-[11px] text-stone-500">Approved for publication issue</p>
                 </div>
               </div>
 
-              {/* Co-Authors dynamic list */}
-              <div className="space-y-3 pt-2">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-semibold text-stone-700">
-                    Contributing Co-Authors ({coAuthors.length})
-                  </label>
+              {/* Recent Submissions */}
+              <div className="rounded-xl border border-stone-200 bg-white p-6 shadow-sm space-y-4">
+                <div className="flex items-center justify-between border-b border-stone-200 pb-3">
+                  <h3 className="font-serif text-lg font-bold text-stone-900">Recent Transmissions</h3>
                   <button
                     type="button"
-                    onClick={handleAddCoAuthor}
-                    className="inline-flex items-center gap-1 text-xs font-semibold text-[#14452F] hover:underline cursor-pointer"
+                    onClick={() => setActiveTab('articles')}
+                    className="text-xs font-semibold text-[#14452F] hover:underline"
                   >
-                    <Plus className="h-3.5 w-3.5" />
-                    <span>Add Co-Author</span>
+                    View All ({submissions.length})
                   </button>
                 </div>
 
-                {coAuthors.map((coa, idx) => (
-                  <div
-                    key={idx}
-                    className="rounded-lg border border-stone-200 bg-stone-50/70 p-3.5 space-y-3"
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-stone-600">Co-Author #{idx + 1}</span>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveCoAuthor(idx)}
-                        className="text-stone-400 hover:text-red-600 cursor-pointer"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      <input
-                        type="text"
-                        placeholder="Co-Author Name"
-                        value={coa.name}
-                        onChange={(e) => handleCoAuthorChange(idx, 'name', e.target.value)}
-                        className="rounded border border-stone-300 bg-white px-2.5 py-1.5 text-xs text-stone-900 outline-none focus:border-[#14452F]"
-                      />
-                      <input
-                        type="text"
-                        placeholder="Institution / Dept"
-                        value={coa.institute}
-                        onChange={(e) => handleCoAuthorChange(idx, 'institute', e.target.value)}
-                        className="rounded border border-stone-300 bg-white px-2.5 py-1.5 text-xs text-stone-900 outline-none focus:border-[#14452F]"
-                      />
-                      <input
-                        type="email"
-                        placeholder="Email Address"
-                        value={coa.email}
-                        onChange={(e) => handleCoAuthorChange(idx, 'email', e.target.value)}
-                        className="rounded border border-stone-300 bg-white px-2.5 py-1.5 text-xs text-stone-900 outline-none focus:border-[#14452F]"
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Section 3: Manuscript Upload & Contact */}
-            <div className="space-y-4 pt-2">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-[#14452F] flex items-center gap-1.5 border-b border-stone-100 pb-2">
-                <Upload className="h-4 w-4" /> 3. File Upload &amp; Contact
-              </h3>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-stone-700 mb-1">
-                    Contact Phone Number
-                  </label>
-                  <input
-                    type="text"
-                    value={contactNumber}
-                    onChange={(e) => setContactNumber(e.target.value)}
-                    placeholder="+234 (803) 000-0000"
-                    className="w-full rounded-md border border-stone-300 px-3.5 py-2 text-sm text-stone-900 focus:border-[#14452F] focus:ring-1 focus:ring-[#14452F] outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-stone-700 mb-1">
-                    Country
-                  </label>
-                  <input
-                    type="text"
-                    value={country}
-                    onChange={(e) => setCountry(e.target.value)}
-                    className="w-full rounded-md border border-stone-300 px-3.5 py-2 text-sm text-stone-900 focus:border-[#14452F] focus:ring-1 focus:ring-[#14452F] outline-none"
-                  />
-                </div>
-              </div>
-
-              {/* Upload Box */}
-              <div className="rounded-xl border-2 border-dashed border-stone-300 bg-stone-50 p-6 text-center space-y-2 hover:border-[#14452F] transition-colors">
-                <Upload className="mx-auto h-8 w-8 text-stone-400" />
-                <div className="text-sm font-semibold text-stone-700">
-                  Select Manuscript File (.doc, .docx, .pdf)
-                </div>
-                <p className="text-xs text-stone-500">
-                  Files up to 25MB supported. Ensure blind review version removes identifiable metadata if required.
-                </p>
-                <div className="pt-2">
-                  <input
-                    type="file"
-                    required
-                    accept=".pdf,.doc,.docx"
-                    onChange={(e) => setFile(e.target.files?.[0] || null)}
-                    className="text-xs text-stone-600 file:mr-3 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-[#14452F] file:text-white hover:file:bg-[#0D3121] file:cursor-pointer"
-                  />
-                </div>
-                {file && (
-                  <div className="mt-2 text-xs font-semibold text-emerald-700">
-                    ✓ Selected: {file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={submitting}
-              className="w-full flex items-center justify-center gap-2 rounded-lg bg-[#14452F] py-3 text-sm font-semibold text-white shadow-md hover:bg-[#0D3121] active:scale-[0.99] transition-all cursor-pointer disabled:opacity-50"
-            >
-              {submitting ? (
-                <span>Transmitting Manuscript to Editorial System...</span>
-              ) : (
-                <>
-                  <Send className="h-4 w-4" />
-                  <span>Finalize &amp; Transmit Manuscript</span>
-                </>
-              )}
-            </button>
-          </form>
-        </div>
-      )}
-
-      {/* TAB 3: MY MANUSCRIPTS */}
-      {activeTab === 'articles' && (
-        <div className="rounded-xl border border-stone-200 bg-white overflow-hidden shadow-sm space-y-4 p-6">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-stone-200 pb-4">
-            <div>
-              <h2 className="font-serif text-xl font-bold text-stone-900">
-                Transmitted Manuscripts &amp; Articles
-              </h2>
-              <p className="text-xs text-stone-500">
-                Track status updates, editorial feedback, and publication dates for your research.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => setActiveTab('submit')}
-              className="rounded-md bg-[#14452F] px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-[#0D3121] cursor-pointer"
-            >
-              + Submit New
-            </button>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="border-b border-stone-200 bg-stone-50 text-stone-600 font-semibold uppercase tracking-wider">
-                  <th className="py-3 px-4">Manuscript Title</th>
-                  <th className="py-3 px-4">Subject Area</th>
-                  <th className="py-3 px-4">Submission Date</th>
-                  <th className="py-3 px-4">Peer Review Status</th>
-                  <th className="py-3 px-4">Actions / Feedback</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-stone-100">
                 {submissions.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="py-8 text-center text-stone-400">
-                      No manuscripts found in your researcher account.
-                    </td>
-                  </tr>
+                  <div className="py-8 text-center text-xs text-stone-500">
+                    You have not submitted any manuscripts yet. Click "Submit Manuscript" to begin.
+                  </div>
                 ) : (
-                  submissions.map((sub) => (
-                    <tr key={sub.id} className="hover:bg-stone-50/60 transition-colors">
-                      <td className="py-4 px-4 font-semibold text-stone-900 max-w-xs">
-                        <div className="truncate">{sub.title}</div>
-                        {sub.co_authors && sub.co_authors.length > 0 && (
-                          <div className="text-[11px] text-stone-500">
-                            +{sub.co_authors.length} co-author(s)
+                  <div className="space-y-3">
+                    {submissions.slice(0, 3).map((sub) => (
+                      <div
+                        key={sub.id}
+                        className="rounded-lg border border-stone-200/80 p-4 hover:border-stone-300 transition-colors flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
+                      >
+                        <div className="space-y-1">
+                          <h4 className="text-sm font-semibold text-stone-900">{sub.title}</h4>
+                          <div className="flex flex-wrap items-center gap-2 text-xs text-stone-500">
+                            <span>Subject: {sub.subject_area}</span>
+                            <span>•</span>
+                            <span>Date: {new Date(sub.submitted_at).toLocaleDateString()}</span>
                           </div>
-                        )}
-                      </td>
-                      <td className="py-4 px-4 text-stone-600">{sub.subject_area}</td>
-                      <td className="py-4 px-4 text-stone-500 whitespace-nowrap">
-                        {new Date(sub.submitted_at).toLocaleDateString()}
-                      </td>
-                      <td className="py-4 px-4 whitespace-nowrap">
+                        </div>
+
                         <span
-                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full font-semibold uppercase tracking-wider text-[11px] ${
+                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full font-semibold uppercase tracking-wider text-[11px] shrink-0 ${
                             sub.status === 'accepted'
                               ? 'bg-emerald-100 text-emerald-800'
                               : sub.status === 'rejected'
@@ -719,89 +395,433 @@ export function MemberDashboardView({ user, onLogout }: MemberDashboardViewProps
                         >
                           {sub.status.replace('_', ' ')}
                         </span>
-                      </td>
-                      <td className="py-4 px-4 space-y-1">
-                        {sub.file_path && (
-                          <a
-                            href={`/uploads/manuscripts/${sub.file_path}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#0B3B69] hover:underline"
-                          >
-                            <Download className="h-3 w-3" /> Download File
-                          </a>
-                        )}
-                        {sub.admin_feedback && (
-                          <div className="p-2 rounded bg-stone-100 text-[11px] text-stone-700 border border-stone-200">
-                            <span className="font-semibold text-stone-900">Editorial Feedback:</span>{' '}
-                            {sub.admin_feedback}
-                          </div>
-                        )}
-                      </td>
-                    </tr>
-                  ))
+                      </div>
+                    ))}
+                  </div>
                 )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {/* TAB 4: NOTIFICATIONS */}
-      {activeTab === 'notifications' && (
-        <div className="rounded-xl border border-stone-200 bg-white p-6 shadow-sm max-w-3xl mx-auto space-y-4">
-          <div className="flex items-center justify-between border-b border-stone-200 pb-4">
-            <div>
-              <h2 className="font-serif text-xl font-bold text-stone-900">
-                Editorial Notifications
-              </h2>
-              <p className="text-xs text-stone-500">
-                Direct updates on review milestones, publication assignments, and calls for papers.
-              </p>
-            </div>
-            {unreadNotifs > 0 && (
-              <button
-                type="button"
-                onClick={handleMarkNotificationsRead}
-                className="text-xs font-semibold text-[#14452F] hover:underline cursor-pointer"
-              >
-                Mark all as read
-              </button>
-            )}
-          </div>
-
-          <div className="divide-y divide-stone-100 space-y-2">
-            {notifications.length === 0 ? (
-              <div className="p-8 text-center text-xs text-stone-400">
-                No notifications at this time.
               </div>
-            ) : (
-              notifications.map((notif) => (
+            </div>
+          )}
+
+          {/* TAB 2: SUBMIT MANUSCRIPT */}
+          {activeTab === 'submit' && (
+            <div className="rounded-xl border border-stone-200 bg-white p-6 shadow-sm max-w-4xl space-y-6">
+              <div className="border-b border-stone-200 pb-4">
+                <h2 className="font-serif text-2xl font-bold text-stone-900">
+                  Transmit Scholarly Manuscript
+                </h2>
+                <p className="text-xs sm:text-sm text-stone-600 mt-1">
+                  Upload your research for peer review and editorial assessment for official Niger Delta University publications.
+                </p>
+              </div>
+
+              {submitFeedback && (
                 <div
-                  key={notif.id}
-                  className={`p-3.5 rounded-lg flex items-start gap-3 transition-colors ${
-                    notif.is_read ? 'bg-white' : 'bg-amber-50/60 border border-amber-200/50'
+                  className={`p-4 rounded-lg flex items-center gap-3 text-xs font-semibold ${
+                    submitFeedback.type === 'success'
+                      ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                      : 'bg-red-50 text-red-800 border border-red-200'
                   }`}
                 >
-                  <Bell
-                    className={`h-4 w-4 shrink-0 mt-0.5 ${
-                      notif.is_read ? 'text-stone-400' : 'text-amber-600'
-                    }`}
-                  />
-                  <div className="space-y-0.5 flex-1 text-xs">
-                    <p className={`text-stone-800 ${notif.is_read ? '' : 'font-semibold'}`}>
-                      {notif.message}
-                    </p>
-                    <span className="text-[10px] text-stone-400">
-                      {new Date(notif.created_at).toLocaleString()}
-                    </span>
+                  {submitFeedback.type === 'success' ? (
+                    <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0" />
+                  ) : (
+                    <AlertCircle className="h-5 w-5 text-red-600 shrink-0" />
+                  )}
+                  <span>{submitFeedback.message}</span>
+                </div>
+              )}
+
+              <form onSubmit={handleManuscriptSubmit} className="space-y-6 text-xs">
+                {/* 1. Paper Details */}
+                <div className="space-y-4">
+                  <h3 className="font-semibold text-stone-900 text-sm border-b border-stone-100 pb-2">
+                    1. Manuscript Identification
+                  </h3>
+
+                  <div>
+                    <label className="block font-medium text-stone-700 mb-1">
+                      Manuscript Full Title *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
+                      placeholder="e.g. Hydrocarbon Fingerprinting and Wetland Remediation in Bayelsa State"
+                      className="w-full rounded-md border border-stone-300 px-3 py-2 text-stone-900 focus:border-[#14452F] focus:outline-none"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block font-medium text-stone-700 mb-1">
+                        Discipline / Subject Area *
+                      </label>
+                      <select
+                        value={subjectArea}
+                        onChange={(e) => setSubjectArea(e.target.value)}
+                        className="w-full rounded-md border border-stone-300 px-3 py-2 text-stone-900 focus:border-[#14452F] focus:outline-none"
+                      >
+                        <option value="Environmental Science">Environmental Science</option>
+                        <option value="Petroleum Engineering">Petroleum Engineering</option>
+                        <option value="Library & Information Science">Library & Information Science</option>
+                        <option value="Medical & Health Sciences">Medical & Health Sciences</option>
+                        <option value="Law & Legal Studies">Law & Legal Studies</option>
+                        <option value="Chemical Sciences">Chemical Sciences</option>
+                        <option value="Management & Social Sciences">Management & Social Sciences</option>
+                        <option value="Agricultural Engineering">Agricultural Engineering</option>
+                        <option value="Other">Other Disciplines</option>
+                      </select>
+                    </div>
+
+                    {subjectArea === 'Other' && (
+                      <div>
+                        <label className="block font-medium text-stone-700 mb-1">
+                          Specify Discipline *
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={customArea}
+                          onChange={(e) => setCustomArea(e.target.value)}
+                          placeholder="e.g. Marine Biology & Coastal Ecology"
+                          className="w-full rounded-md border border-stone-300 px-3 py-2 text-stone-900 focus:border-[#14452F] focus:outline-none"
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block font-medium text-stone-700 mb-1">
+                      Abstract (150 – 300 words) *
+                    </label>
+                    <textarea
+                      required
+                      rows={5}
+                      value={abstract}
+                      onChange={(e) => setAbstract(e.target.value)}
+                      placeholder="Provide a concise summary outlining problem statement, methodology, principal findings, and academic significance..."
+                      className="w-full rounded-md border border-stone-300 p-3 text-stone-900 focus:border-[#14452F] focus:outline-none leading-relaxed"
+                    />
                   </div>
                 </div>
-              ))
-            )}
-          </div>
-        </div>
-      )}
+
+                {/* 2. Corresponding Author */}
+                <div className="space-y-4">
+                  <h3 className="font-semibold text-stone-900 text-sm border-b border-stone-100 pb-2">
+                    2. Principal Corresponding Author
+                  </h3>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block font-medium text-stone-700 mb-1">Full Name *</label>
+                      <input
+                        type="text"
+                        required
+                        value={authorName}
+                        onChange={(e) => setAuthorName(e.target.value)}
+                        className="w-full rounded-md border border-stone-300 px-3 py-2 text-stone-900 focus:border-[#14452F] focus:outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-medium text-stone-700 mb-1">Institutional Email *</label>
+                      <input
+                        type="email"
+                        required
+                        value={authorEmail}
+                        onChange={(e) => setAuthorEmail(e.target.value)}
+                        className="w-full rounded-md border border-stone-300 px-3 py-2 text-stone-900 focus:border-[#14452F] focus:outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-medium text-stone-700 mb-1">Affiliated Institution *</label>
+                      <input
+                        type="text"
+                        required
+                        value={authorInstitute}
+                        onChange={(e) => setAuthorInstitute(e.target.value)}
+                        className="w-full rounded-md border border-stone-300 px-3 py-2 text-stone-900 focus:border-[#14452F] focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block font-medium text-stone-700 mb-1">Phone / WhatsApp Contact</label>
+                      <input
+                        type="text"
+                        value={contactNumber}
+                        onChange={(e) => setContactNumber(e.target.value)}
+                        placeholder="+234 (800) 000-0000"
+                        className="w-full rounded-md border border-stone-300 px-3 py-2 text-stone-900 focus:border-[#14452F] focus:outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-medium text-stone-700 mb-1">Country</label>
+                      <input
+                        type="text"
+                        value={country}
+                        onChange={(e) => setCountry(e.target.value)}
+                        className="w-full rounded-md border border-stone-300 px-3 py-2 text-stone-900 focus:border-[#14452F] focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3. Co-Authors */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between border-b border-stone-100 pb-2">
+                    <h3 className="font-semibold text-stone-900 text-sm">
+                      3. Co-Authors (Optional)
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={handleAddCoAuthor}
+                      className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#14452F] hover:underline"
+                    >
+                      <Plus className="h-3 w-3" /> Add Co-Author
+                    </button>
+                  </div>
+
+                  {coAuthors.map((co, idx) => (
+                    <div key={idx} className="p-3 rounded-lg border border-stone-200 bg-stone-50 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold text-stone-700">Co-Author #{idx + 1}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveCoAuthor(idx)}
+                          className="text-red-600 hover:text-red-800"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <input
+                          type="text"
+                          placeholder="Full Name"
+                          value={co.name}
+                          onChange={(e) => handleCoAuthorChange(idx, 'name', e.target.value)}
+                          className="rounded border border-stone-300 px-2.5 py-1.5 bg-white text-stone-900 focus:border-[#14452F] focus:outline-none"
+                        />
+                        <input
+                          type="text"
+                          placeholder="Institution / Department"
+                          value={co.institute}
+                          onChange={(e) => handleCoAuthorChange(idx, 'institute', e.target.value)}
+                          className="rounded border border-stone-300 px-2.5 py-1.5 bg-white text-stone-900 focus:border-[#14452F] focus:outline-none"
+                        />
+                        <input
+                          type="email"
+                          placeholder="Email Address"
+                          value={co.email}
+                          onChange={(e) => handleCoAuthorChange(idx, 'email', e.target.value)}
+                          className="rounded border border-stone-300 px-2.5 py-1.5 bg-white text-stone-900 focus:border-[#14452F] focus:outline-none"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* 4. File Attachment */}
+                <div className="space-y-4">
+                  <h3 className="font-semibold text-stone-900 text-sm border-b border-stone-100 pb-2">
+                    4. Manuscript File Upload *
+                  </h3>
+
+                  <div className="rounded-lg border-2 border-dashed border-stone-300 p-6 text-center hover:border-[#14452F] transition-colors">
+                    <input
+                      type="file"
+                      id="manuscript-file-input"
+                      accept=".pdf,.doc,.docx"
+                      onChange={(e) => setFile(e.target.files ? e.target.files[0] : null)}
+                      className="hidden"
+                    />
+                    <label
+                      htmlFor="manuscript-file-input"
+                      className="cursor-pointer flex flex-col items-center justify-center space-y-2"
+                    >
+                      <Upload className="h-8 w-8 text-stone-400" />
+                      <div className="font-semibold text-stone-700">
+                        {file ? file.name : 'Click to select manuscript file or drag & drop'}
+                      </div>
+                      <p className="text-[11px] text-stone-500">
+                        Permitted formats: .pdf, .doc, .docx · Maximum file size: 25MB
+                      </p>
+                    </label>
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t border-stone-200 flex justify-end">
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="inline-flex items-center gap-2 rounded-md bg-[#14452F] px-6 py-2.5 font-semibold text-white hover:bg-[#0D3121] shadow transition-all cursor-pointer disabled:opacity-50"
+                  >
+                    <Send className="h-4 w-4" />
+                    <span>{submitting ? 'Transmitting...' : 'Submit Manuscript for Review'}</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {/* TAB 3: MY MANUSCRIPTS */}
+          {activeTab === 'articles' && (
+            <div className="rounded-xl border border-stone-200 bg-white overflow-hidden shadow-sm space-y-4 p-6">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-stone-200 pb-4">
+                <div>
+                  <h2 className="font-serif text-xl font-bold text-stone-900">
+                    Transmitted Manuscripts &amp; Articles
+                  </h2>
+                  <p className="text-xs text-stone-500">
+                    Track status updates, editorial feedback, and publication dates for your research.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('submit')}
+                  className="rounded-md bg-[#14452F] px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-[#0D3121] cursor-pointer"
+                >
+                  + Submit New
+                </button>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="border-b border-stone-200 bg-stone-50 text-stone-600 font-semibold uppercase tracking-wider">
+                      <th className="py-3 px-4">Manuscript Title</th>
+                      <th className="py-3 px-4">Subject Area</th>
+                      <th className="py-3 px-4">Submission Date</th>
+                      <th className="py-3 px-4">Peer Review Status</th>
+                      <th className="py-3 px-4">Actions / Feedback</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-stone-100">
+                    {submissions.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="py-8 text-center text-stone-400">
+                          No manuscripts found in your researcher account.
+                        </td>
+                      </tr>
+                    ) : (
+                      submissions.map((sub) => (
+                        <tr key={sub.id} className="hover:bg-stone-50/60 transition-colors">
+                          <td className="py-4 px-4 font-semibold text-stone-900 max-w-xs">
+                            <div className="truncate">{sub.title}</div>
+                            {sub.co_authors && sub.co_authors.length > 0 && (
+                              <div className="text-[11px] text-stone-500">
+                                +{sub.co_authors.length} co-author(s)
+                              </div>
+                            )}
+                          </td>
+                          <td className="py-4 px-4 text-stone-600">{sub.subject_area}</td>
+                          <td className="py-4 px-4 text-stone-500 whitespace-nowrap">
+                            {new Date(sub.submitted_at).toLocaleDateString()}
+                          </td>
+                          <td className="py-4 px-4 whitespace-nowrap">
+                            <span
+                              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full font-semibold uppercase tracking-wider text-[11px] ${
+                                sub.status === 'accepted'
+                                  ? 'bg-emerald-100 text-emerald-800'
+                                  : sub.status === 'rejected'
+                                  ? 'bg-red-100 text-red-800'
+                                  : sub.status === 'under_review'
+                                  ? 'bg-blue-100 text-blue-800'
+                                  : 'bg-amber-100 text-amber-800'
+                              }`}
+                            >
+                              {sub.status.replace('_', ' ')}
+                            </span>
+                          </td>
+                          <td className="py-4 px-4 space-y-1">
+                            {sub.file_path && (
+                              <a
+                                href={`/uploads/manuscripts/${sub.file_path}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#0B3B69] hover:underline"
+                              >
+                                <Download className="h-3 w-3" /> Download File
+                              </a>
+                            )}
+                            {sub.admin_feedback && (
+                              <div className="p-2 rounded bg-stone-100 text-[11px] text-stone-700 border border-stone-200">
+                                <span className="font-semibold text-stone-900">Editorial Feedback:</span>{' '}
+                                {sub.admin_feedback}
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 4: NOTIFICATIONS */}
+          {activeTab === 'notifications' && (
+            <div className="rounded-xl border border-stone-200 bg-white p-6 shadow-sm max-w-3xl space-y-4">
+              <div className="flex items-center justify-between border-b border-stone-200 pb-4">
+                <div>
+                  <h2 className="font-serif text-xl font-bold text-stone-900">
+                    Editorial Notifications
+                  </h2>
+                  <p className="text-xs text-stone-500">
+                    Direct updates on review milestones, publication assignments, and calls for papers.
+                  </p>
+                </div>
+                {unreadNotifs > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleMarkNotificationsRead}
+                    className="text-xs font-semibold text-[#14452F] hover:underline cursor-pointer"
+                  >
+                    Mark all as read
+                  </button>
+                )}
+              </div>
+
+              <div className="space-y-3">
+                {notifications.length === 0 ? (
+                  <div className="py-8 text-center text-xs text-stone-400">
+                    No notifications yet. You will receive updates here as your manuscripts progress through peer review.
+                  </div>
+                ) : (
+                  notifications.map((n) => (
+                    <div
+                      key={n.id}
+                      className={`p-4 rounded-lg border transition-colors flex items-start gap-3 ${
+                        n.is_read
+                          ? 'bg-stone-50/70 border-stone-200 text-stone-700'
+                          : 'bg-emerald-50/40 border-emerald-200 text-stone-900 font-medium'
+                      }`}
+                    >
+                      <Bell
+                        className={`h-4 w-4 mt-0.5 shrink-0 ${
+                          n.is_read ? 'text-stone-400' : 'text-emerald-700'
+                        }`}
+                      />
+                      <div className="space-y-1 flex-1">
+                        <p className="text-xs leading-relaxed">{n.message}</p>
+                        <span className="text-[10px] text-stone-400">
+                          {new Date(n.created_at).toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+        </main>
+      </div>
     </div>
   );
 }

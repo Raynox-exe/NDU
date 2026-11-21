@@ -178,7 +178,7 @@ export default function App() {
           </AnimatePresence>
         </main>
 
-        {activePage !== 'admin-portal' && (
+        {activePage !== 'admin-portal' && activePage !== 'member-portal' && (
         <footer className="mt-12 border-t border-stone-200 bg-white">
           <RevealOnScroll yOffset={14}>
             <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-10 py-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-xs text-stone-600">

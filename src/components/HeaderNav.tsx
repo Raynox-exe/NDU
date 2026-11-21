@@ -433,16 +433,6 @@ export function HeaderNav({
 
           {/* Zone 3: Actions + Portal Button + Mobile Toggle */}
           <div className="flex items-center gap-2.5 shrink-0">
-            {/* Quick Submit Manuscript Action */}
-            <button
-              type="button"
-              onClick={onOpenSubmissionForm}
-              className="hidden sm:inline-flex items-center gap-1.5 rounded-md border border-[#14452F]/30 bg-[#14452F]/5 px-3 py-1.5 text-xs font-semibold text-[#14452F] hover:bg-[#14452F]/10 transition-colors cursor-pointer"
-            >
-              <Upload className="h-3.5 w-3.5" />
-              <span>Submit Paper</span>
-            </button>
-
             {/* Portal Button (Researcher / Admin / Sign In) */}
             {currentUser ? (
               <button
@@ -651,8 +641,8 @@ export function HeaderNav({
         </AnimatePresence>
       </header>
 
-      {/* Operational Opening Hours Slide Ribbon — hidden on admin portal */}
-      {activePage !== 'admin-portal' && (
+      {/* Operational Opening Hours Slide Ribbon — hidden on admin & member portals */}
+      {activePage !== 'admin-portal' && activePage !== 'member-portal' && (
       <div
         aria-label="Library Opening Hours Notice"
         className="border-b border-[#0D3121] bg-[#14452F] text-stone-100 overflow-hidden select-none"

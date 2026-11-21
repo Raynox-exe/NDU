@@ -221,32 +221,6 @@ export function AuthModal({ isOpen, onClose, onSuccess, initialMode = 'login' }:
               </p>
             )}
           </div>
-
-          {/* Quick Demo Credentials Box */}
-          <div className="rounded-lg bg-stone-50 p-3 border border-stone-200 space-y-2">
-            <div className="flex items-center gap-1.5 text-[11px] font-semibold text-stone-600 uppercase tracking-wider">
-              <ShieldCheck className="h-3.5 w-3.5 text-[#14452F]" />
-              <span>Instant Test &amp; Demo Access:</span>
-            </div>
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <button
-                type="button"
-                onClick={() => handleQuickDemo('admin')}
-                className="px-2.5 py-1.5 rounded border border-stone-300 bg-white font-medium text-stone-800 hover:bg-stone-100 hover:border-[#14452F] text-left cursor-pointer transition-colors"
-              >
-                <span className="block font-bold text-[#14452F]">Login as Admin</span>
-                <span className="text-[10px] text-stone-500">Full System Control</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleQuickDemo('researcher')}
-                className="px-2.5 py-1.5 rounded border border-stone-300 bg-white font-medium text-stone-800 hover:bg-stone-100 hover:border-[#0B3B69] text-left cursor-pointer transition-colors"
-              >
-                <span className="block font-bold text-[#0B3B69]">Login as Member</span>
-                <span className="text-[10px] text-stone-500">Dr. Ebiere Tari</span>
-              </button>
-            </div>
-          </div>
         </div>
       </div>
     </div>
