@@ -12,6 +12,7 @@ import {
 import { AnimatePresence, motion } from 'motion/react';
 import {
   DATABASE_RESOURCES,
+  LIBRARY_SERVICES,
   OUR_LIBRARIES,
   type CampusLibrary,
   type DatabaseResource,
@@ -42,33 +43,46 @@ export function HomeAboutView({
 }: HomeAboutViewProps) {
   const [selectedLibrary, setSelectedLibrary] = useState<CampusLibrary | null>(null);
 
-  const quickLinks = DATABASE_RESOURCES.filter((d) =>
-    [
-      'ebscohost',
-      'hinari',
-      'taylor-francis',
-      'pubmed',
-      'jstor',
-      'research-capacity',
-      'heinonline',
-      'lexisnexis',
-      'legalpedia',
-      'law-pavilion',
-      'databases-index',
-      'ndu-repository',
-      'ndu-bulletin',
-      'ebooks',
-      'ejournals',
-      'subject-guides',
-      'ndu-journals',
-      'thesis-dissertation',
-      'newspapers-db',
-    ].includes(d.id),
-  );
+  const quickLinkIds = [
+    'ebscohost',
+    'hinari',
+    'taylor-francis',
+    'oxford-press',
+    'heinonline',
+    'lexisnexis',
+    'legalpedia',
+    'law-pavilion',
+    'proquest',
+    'pubmed',
+    'proquest-direct',
+    'cinahl',
+    'medline-complete',
+    'open-access-databases',
+    'ebooks',
+    'ejournals',
+    'ndu-bulletin',
+    'ndu-repository',
+    'ndu-journals',
+    'newspapers-db',
+    'jstor',
+    'lirn',
+  ];
+
+  const quickLinks = quickLinkIds
+    .map((id) => DATABASE_RESOURCES.find((d) => d.id === id))
+    .filter((d): d is DatabaseResource => Boolean(d));
 
   const handleQuickLink = (item: DatabaseResource) => {
+    if (item.username || item.password) {
+      onSelectDatabase(item);
+      return;
+    }
+    if (item.url) {
+      window.open(item.url, '_blank', 'noopener,noreferrer');
+      return;
+    }
     if (item.internalRoute === 'journals') {
-      onSelectFacultyJournals('agriculture');
+      onSelectFacultyJournals('science');
       return;
     }
     if (item.internalRoute === 'digital-computers') {
@@ -102,24 +116,54 @@ export function HomeAboutView({
             </div>
 
             <ul className="divide-y divide-stone-100">
-              {quickLinks.map((link) => (
-                <li key={link.id}>
-                  <button
-                    type="button"
-                    onClick={() => handleQuickLink(link)}
-                    className="group flex min-h-[38px] w-full items-center justify-between gap-2 py-2 text-left text-[13px] font-medium text-[#0B3B69] hover:text-[#14452F] transition-colors cursor-pointer"
-                  >
-                    <span className="group-hover:underline underline-offset-4 leading-snug">
-                      {link.name}
-                    </span>
-                    {link.url ? (
-                      <ExternalLink className="h-3.5 w-3.5 text-stone-400 group-hover:text-[#14452F] group-hover:translate-x-0.5 transition-all shrink-0" />
-                    ) : (
-                      <ChevronRight className="h-3.5 w-3.5 text-stone-400 group-hover:text-[#14452F] group-hover:translate-x-0.5 transition-all shrink-0" />
-                    )}
-                  </button>
-                </li>
-              ))}
+              {quickLinks.map((link) => {
+                const hasCredentials = Boolean(link.username || link.password);
+                const isDirectExternal = Boolean(link.url) && !hasCredentials;
+
+                if (isDirectExternal && link.url) {
+                  return (
+                    <li key={link.id}>
+                      <a
+                        href={link.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="group flex min-h-[38px] w-full items-center justify-between gap-2 py-2 text-left text-[13px] font-medium text-[#0B3B69] hover:text-[#14452F] transition-colors cursor-pointer"
+                      >
+                        <span className="group-hover:underline underline-offset-4 leading-snug">
+                          {link.name}
+                        </span>
+                        <ExternalLink className="h-3.5 w-3.5 text-stone-400 group-hover:text-[#14452F] group-hover:translate-x-0.5 transition-all shrink-0" />
+                      </a>
+                    </li>
+                  );
+                }
+
+                return (
+                  <li key={link.id}>
+                    <button
+                      type="button"
+                      onClick={() => handleQuickLink(link)}
+                      className="group flex min-h-[38px] w-full items-center justify-between gap-2 py-2 text-left text-[13px] font-medium text-[#0B3B69] hover:text-[#14452F] transition-colors cursor-pointer"
+                    >
+                      <span className="group-hover:underline underline-offset-4 leading-snug">
+                        {link.name}
+                      </span>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {hasCredentials && (
+                          <span className="text-[9px] font-bold uppercase tracking-wider bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded">
+                            Login Info
+                          </span>
+                        )}
+                        {link.url ? (
+                          <ExternalLink className="h-3.5 w-3.5 text-stone-400 group-hover:text-[#14452F] group-hover:translate-x-0.5 transition-all" />
+                        ) : (
+                          <ChevronRight className="h-3.5 w-3.5 text-stone-400 group-hover:text-[#14452F] group-hover:translate-x-0.5 transition-all" />
+                        )}
+                      </div>
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
 
             <div className="mt-4 pt-4 border-t border-stone-200">
@@ -222,7 +266,7 @@ export function HomeAboutView({
                     onClick={() => onNavigate('services')}
                     className="rounded-md border border-stone-300 bg-white px-4 py-2 text-xs sm:text-sm font-medium text-stone-800 hover:bg-stone-50 active:scale-[0.98] transition-all cursor-pointer whitespace-nowrap"
                   >
-                    Browse Our 17 Services
+                    Browse Our {LIBRARY_SERVICES.length} Services
                   </button>
                   <button
                     type="button"

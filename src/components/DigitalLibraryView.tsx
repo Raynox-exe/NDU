@@ -11,6 +11,10 @@ import {
   Search,
   Trash2,
   X,
+  Download,
+  BookOpen,
+  FileText,
+  Lock,
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { FACULTY_CATALOGS, TOTAL_JOURNAL_COUNT } from '../data/journalsIndex';
@@ -19,6 +23,7 @@ import { DATABASE_RESOURCES, type DatabaseResource } from '../data/libraryMeta';
 import { HeroSlideBanner } from './HeroSlideBanner';
 import { INSTITUTIONAL_EASE, RevealOnLoad, RevealOnScroll } from './MotionPrimitives';
 import { NduCrest } from './NduCrest';
+import { api, type JournalIssue, type Article, type DynamicLink } from '../services/api';
 
 interface DigitalLibraryViewProps {
   selectedFacultyId: string;
@@ -52,6 +57,43 @@ export function DigitalLibraryView({
       return [];
     }
   });
+
+  const [viewMode, setViewMode] = useState<'digest' | 'departmental'>('digest');
+  const [digestJournals, setDigestJournals] = useState<JournalIssue[]>([]);
+  const [digestArticles, setDigestArticles] = useState<Article[]>([]);
+  const [selectedVolume, setSelectedVolume] = useState<string>('all');
+  const [digestSearch, setDigestSearch] = useState<string>('');
+  const [expandedAbstracts, setExpandedAbstracts] = useState<Record<string, boolean>>({});
+  const [journalOverrides, setJournalOverrides] = useState<Record<string, { is_active?: boolean }>>({});
+  const [dynamicDatabases, setDynamicDatabases] = useState<DynamicLink[]>([]);
+
+  // Fetch dynamic published articles, volumes, overrides, and databases
+  useEffect(() => {
+    let isMounted = true;
+    Promise.all([
+      api.public.getJournals(),
+      api.public.getArticles(),
+      api.public.getJournalOverrides(),
+      api.public.getSectionsAndLinks(),
+    ])
+      .then(([jRes, aRes, oRes, slRes]) => {
+        if (!isMounted) return;
+        if (jRes.success && jRes.journals) setDigestJournals(jRes.journals);
+        if (aRes.success && aRes.articles) setDigestArticles(aRes.articles);
+        if (oRes.success && oRes.overrides) setJournalOverrides(oRes.overrides);
+        if (slRes.success && slRes.allActiveLinks) {
+          const dbLinks = slRes.allActiveLinks.filter(
+            (l) => l.section_id === 'sec-databases' && l.is_active !== false
+          );
+          if (dbLinks.length > 0) setDynamicDatabases(dbLinks);
+        }
+      })
+      .catch((e) => console.error('Error fetching digital library dynamic data:', e));
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     try {
@@ -121,6 +163,8 @@ export function DigitalLibraryView({
     for (const fac of FACULTY_CATALOGS) {
       for (const dept of fac.departments) {
         for (const j of dept.journals) {
+          // Check if admin has disabled this journal
+          if (journalOverrides[j.id]?.is_active === false) continue;
           list.push({
             ...j,
             facultyName: fac.shortName,
@@ -132,7 +176,7 @@ export function DigitalLibraryView({
       }
     }
     return list;
-  }, []);
+  }, [journalOverrides]);
 
   const readingListJournals = useMemo(
     () => globalFlatJournals.filter((j) => bookmarks.includes(j.id)),
@@ -188,6 +232,7 @@ export function DigitalLibraryView({
 
     if (!activeDepartment) return [];
     return activeDepartment.journals
+      .filter((j) => journalOverrides[j.id]?.is_active !== false)
       .filter((j) => subCategoryFilter === 'All' || j.subCategory === subCategoryFilter)
       .map((j) => ({
         ...j,
@@ -204,6 +249,7 @@ export function DigitalLibraryView({
     activeDepartment,
     activeFaculty,
     subCategoryFilter,
+    journalOverrides,
   ]);
 
   const handleFacultyDropdownToggle = (facultyId: string) => {
@@ -231,6 +277,14 @@ export function DigitalLibraryView({
   };
 
   const handleDatabaseClick = (db: DatabaseResource) => {
+    if (db.username || db.password) {
+      onSelectDatabase(db);
+      return;
+    }
+    if (db.url) {
+      window.open(db.url, '_blank', 'noopener,noreferrer');
+      return;
+    }
     if (db.internalRoute === 'journals') {
       const anchor = document.getElementById('e-journals-directory');
       anchor?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -268,22 +322,50 @@ export function DigitalLibraryView({
             </div>
 
             <ul className="divide-y divide-stone-100">
-              {DATABASE_RESOURCES.map((db) => (
-                <li key={db.id}>
-                  <button
-                    type="button"
-                    onClick={() => handleDatabaseClick(db)}
-                    className="group flex min-h-[36px] w-full items-center justify-between gap-2 py-2 text-left text-[13px] font-medium text-[#0B3B69] hover:text-[#14452F] cursor-pointer"
-                  >
-                    <span className="group-hover:underline underline-offset-2 leading-snug">
-                      {db.name}
-                    </span>
-                    {db.url && (
-                      <ExternalLink className="h-3 w-3 text-stone-400 group-hover:text-[#14452F] group-hover:translate-x-0.5 transition-all shrink-0" />
-                    )}
-                  </button>
-                </li>
-              ))}
+              {(dynamicDatabases.length > 0 ? dynamicDatabases : DATABASE_RESOURCES).map((db: any) => {
+                const hasCredentials = Boolean(db.username || db.password);
+                const isDirectExternal = Boolean(db.url) && !hasCredentials;
+
+                if (isDirectExternal && db.url) {
+                  return (
+                    <li key={db.id}>
+                      <a
+                        href={db.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="group flex min-h-[36px] w-full items-center justify-between gap-2 py-2 text-left text-[13px] font-medium text-[#0B3B69] hover:text-[#14452F]"
+                      >
+                        <span className="group-hover:underline underline-offset-2 leading-snug">
+                          {db.name}
+                        </span>
+                        <ExternalLink className="h-3 w-3 text-stone-400 group-hover:text-[#14452F] group-hover:translate-x-0.5 transition-all shrink-0" />
+                      </a>
+                    </li>
+                  );
+                }
+
+                return (
+                  <li key={db.id}>
+                    <button
+                      type="button"
+                      onClick={() => handleDatabaseClick(db)}
+                      className="group flex min-h-[36px] w-full items-center justify-between gap-2 py-2 text-left text-[13px] font-medium text-[#0B3B69] hover:text-[#14452F] cursor-pointer"
+                    >
+                      <span className="group-hover:underline underline-offset-2 leading-snug">
+                        {db.name}
+                      </span>
+                      {hasCredentials && (
+                        <span className="text-[9px] font-bold uppercase tracking-wider bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded shrink-0">
+                          Login Info
+                        </span>
+                      )}
+                      {!hasCredentials && db.url && (
+                        <ExternalLink className="h-3 w-3 text-stone-400 group-hover:text-[#14452F] group-hover:translate-x-0.5 transition-all shrink-0" />
+                      )}
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
           </RevealOnLoad>
         </aside>
@@ -383,6 +465,201 @@ export function DigitalLibraryView({
               </button>
             </div>
 
+            {/* View Mode Switcher: Peer-Reviewed Research Digest vs Departmental Catalog */}
+            <div className="flex flex-wrap items-center gap-2 bg-stone-100 p-1.5 rounded-lg border border-stone-200">
+              <button
+                type="button"
+                onClick={() => setViewMode('digest')}
+                className={`flex-1 min-h-[40px] px-4 py-2 rounded-md text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                  viewMode === 'digest'
+                    ? 'bg-[#14452F] text-white shadow-sm'
+                    : 'text-stone-700 hover:text-stone-900 hover:bg-stone-200/50'
+                }`}
+              >
+                <BookOpen className="h-4 w-4" />
+                <span>NDU Research Digest &amp; Published Volumes ({digestArticles.filter(a => a.is_visible !== false).length} Papers)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('departmental')}
+                className={`flex-1 min-h-[40px] px-4 py-2 rounded-md text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                  viewMode === 'departmental'
+                    ? 'bg-[#14452F] text-white shadow-sm'
+                    : 'text-stone-700 hover:text-stone-900 hover:bg-stone-200/50'
+                }`}
+              >
+                <FileText className="h-4 w-4" />
+                <span>Departmental Open Access E-Journals Directory ({TOTAL_JOURNAL_COUNT}+ Titles)</span>
+              </button>
+            </div>
+
+            {viewMode === 'digest' ? (
+              /* NDU RESEARCH DIGEST & PUBLISHED VOLUMES VIEW */
+              <div className="space-y-5 animate-fade-in">
+                {/* Volume selector & Search */}
+                <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 bg-[#FBF9F5] p-3.5 sm:p-4 rounded-md border border-stone-200">
+                  <div className="sm:col-span-5">
+                    <label className="block text-[11px] font-semibold uppercase tracking-[0.1em] text-stone-600 mb-1.5">
+                      Select Journal Issue / Volume
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={selectedVolume}
+                        onChange={(e) => setSelectedVolume(e.target.value)}
+                        className="w-full min-h-[44px] appearance-none rounded-md border border-stone-300 bg-white pl-3.5 pr-10 text-xs sm:text-sm font-medium text-stone-900 focus:border-[#0B3B69] focus:outline-none cursor-pointer"
+                      >
+                        <option value="all">All Published Volumes &amp; Issues</option>
+                        {digestJournals.map((j) => (
+                          <option key={j.id} value={j.id}>
+                            {j.name || `Vol ${j.volume_no}, Issue ${j.issue_no} (${j.publication_year})`}
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-500" />
+                    </div>
+                  </div>
+
+                  <div className="sm:col-span-7">
+                    <label className="block text-[11px] font-semibold uppercase tracking-[0.1em] text-stone-600 mb-1.5">
+                      Search Published Articles
+                    </label>
+                    <div className="relative">
+                      <Search className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" />
+                      <input
+                        type="search"
+                        value={digestSearch}
+                        onChange={(e) => setDigestSearch(e.target.value)}
+                        placeholder="Search by article title, author, or keyword..."
+                        className="w-full min-h-[44px] rounded-md border border-stone-300 bg-white pl-10 pr-10 text-xs sm:text-sm text-stone-900 placeholder:text-stone-400 focus:border-[#0B3B69] focus:outline-none"
+                      />
+                      {digestSearch && (
+                        <button
+                          type="button"
+                          onClick={() => setDigestSearch('')}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Published Articles List */}
+                <div className="space-y-4">
+                  {digestArticles
+                    .filter((a) => a.is_visible !== false)
+                    .filter((a) => selectedVolume === 'all' || a.journal_id === selectedVolume)
+                    .filter((a) => {
+                      if (!digestSearch.trim()) return true;
+                      const q = digestSearch.toLowerCase();
+                      return (
+                        a.title.toLowerCase().includes(q) ||
+                        a.authors.toLowerCase().includes(q) ||
+                        (a.abstract && a.abstract.toLowerCase().includes(q))
+                      );
+                    }).length === 0 ? (
+                    <div className="rounded-lg border border-dashed border-stone-300 p-8 text-center text-xs text-stone-500">
+                      No published articles matched your selection.
+                    </div>
+                  ) : (
+                    digestArticles
+                      .filter((a) => a.is_visible !== false)
+                      .filter((a) => selectedVolume === 'all' || a.journal_id === selectedVolume)
+                      .filter((a) => {
+                        if (!digestSearch.trim()) return true;
+                        const q = digestSearch.toLowerCase();
+                        return (
+                          a.title.toLowerCase().includes(q) ||
+                          a.authors.toLowerCase().includes(q) ||
+                          (a.abstract && a.abstract.toLowerCase().includes(q))
+                        );
+                      })
+                      .map((art) => {
+                        const isExpanded = Boolean(expandedAbstracts[art.id]);
+                        return (
+                          <article
+                            key={art.id}
+                            className="rounded-lg border border-stone-200 bg-white p-5 space-y-3.5 shadow-xs hover:border-stone-300 transition-all"
+                          >
+                            <div className="flex flex-wrap items-center gap-2 text-xs text-stone-500">
+                              <span className="font-semibold text-[#14452F] bg-[#14452F]/10 px-2 py-0.5 rounded">
+                                {art.journal_name || 'NDU Research Journal'}
+                              </span>
+                              {art.page_range && (
+                                <>
+                                  <span>·</span>
+                                  <span>Pages {art.page_range}</span>
+                                </>
+                              )}
+                              {art.published_at && (
+                                <>
+                                  <span>·</span>
+                                  <span>Published {new Date(art.published_at).toLocaleDateString()}</span>
+                                </>
+                              )}
+                            </div>
+
+                            <h3 className="font-serif text-lg sm:text-xl font-bold text-stone-900 leading-snug">
+                              {art.title}
+                            </h3>
+
+                            <div className="text-xs font-semibold text-stone-700">
+                              Authors: <span className="font-normal text-stone-600">{art.authors}</span>
+                            </div>
+
+                            <div className="text-xs text-stone-600 leading-relaxed">
+                              <p className={isExpanded ? '' : 'line-clamp-3'}>
+                                <strong>Abstract: </strong>
+                                {art.abstract}
+                              </p>
+                              {art.abstract && art.abstract.length > 200 && (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setExpandedAbstracts((prev) => ({
+                                      ...prev,
+                                      [art.id]: !prev[art.id],
+                                    }))
+                                  }
+                                  className="text-[11px] font-semibold text-[#0B3B69] hover:underline mt-1 cursor-pointer"
+                                >
+                                  {isExpanded ? 'Show Less ▲' : 'Read Full Abstract ▼'}
+                                </button>
+                              )}
+                            </div>
+
+                            <div className="pt-3 border-t border-stone-100 flex flex-wrap items-center justify-between gap-3 text-xs">
+                              <span className="text-[11px] text-stone-400">
+                                Double-blind peer-reviewed research manuscript
+                              </span>
+
+                              {art.download_enabled && art.file_path ? (
+                                <a
+                                  href={`/uploads/published/${art.file_path}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1.5 rounded-md bg-[#14452F] px-4 py-2 text-xs font-semibold text-white hover:bg-[#0D3121] shadow-sm transition-all"
+                                >
+                                  <Download className="h-3.5 w-3.5" />
+                                  <span>Download Full Paper (PDF)</span>
+                                </a>
+                              ) : (
+                                <span className="inline-flex items-center gap-1.5 rounded-md bg-stone-100 px-3 py-1.5 text-xs font-medium text-stone-500 border border-stone-200">
+                                  <Lock className="h-3 w-3" />
+                                  <span>PDF Download Restricted by Admin</span>
+                                </span>
+                              )}
+                            </div>
+                          </article>
+                        );
+                      })
+                  )}
+                </div>
+              </div>
+            ) : (
+            /* DEPARTMENTAL OPEN ACCESS CATALOG */
+            <>
             {/* Mobile & Quick Faculty/Department Dropdown Selectors */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 bg-[#FBF9F5] p-3.5 sm:p-4 rounded-md border border-stone-200">
               <div className="min-w-0">
@@ -704,6 +981,8 @@ export function DigitalLibraryView({
                   );
                 })}
               </motion.div>
+            )}
+            </>
             )}
             </section>
           </RevealOnScroll>

@@ -3,11 +3,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AnimatePresence, MotionConfig, motion } from 'motion/react';
 import { DigitalLibraryView } from './components/DigitalLibraryView';
 import { HeaderNav, type AppPage } from './components/HeaderNav';
 import { HomeAboutView } from './components/HomeAboutView';
+import { MemberDashboardView } from './components/MemberDashboardView';
+import { AdminDashboardView } from './components/AdminDashboardView';
+import { AuthModal } from './components/AuthModal';
 import {
   INSTITUTIONAL_EASE,
   RevealOnScroll,
@@ -20,6 +23,7 @@ import {
   ServicesView,
 } from './components/ServicesNewsContactViews';
 import type { DatabaseResource } from './data/libraryMeta';
+import { api, type User } from './services/api';
 
 export default function App() {
   const [activePage, setActivePage] = useState<AppPage>('home');
@@ -27,7 +31,40 @@ export default function App() {
   const [selectedFacultyId, setSelectedFacultyId] = useState<string>('agriculture');
   const [activeDatabase, setActiveDatabase] = useState<DatabaseResource | null>(null);
 
+  // Authentication & Portal states
+  const [currentUser, setCurrentUser] = useState<User | null>(() => api.auth.getCurrentUser());
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
+
+  // Verify token on mount
+  useEffect(() => {
+    api.auth
+      .getStatus()
+      .then((res) => {
+        if (res.loggedIn && res.user) {
+          setCurrentUser(res.user);
+        } else {
+          setCurrentUser(null);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   const handleNavigate = (page: AppPage, serviceId?: string) => {
+    // If navigating to member portal without login, show login modal
+    if (page === 'member-portal' && !currentUser) {
+      setAuthMode('login');
+      setShowAuthModal(true);
+      return;
+    }
+
+    // If navigating to admin portal without admin login, show login modal
+    if (page === 'admin-portal' && (!currentUser || currentUser.role !== 'admin')) {
+      setAuthMode('login');
+      setShowAuthModal(true);
+      return;
+    }
+
     setActivePage(page);
     setHighlightedServiceId(serviceId);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -46,6 +83,23 @@ export default function App() {
     }, 120);
   };
 
+  const handleOpenSubmissionForm = () => {
+    if (currentUser) {
+      setActivePage('member-portal');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      setAuthMode('register');
+      setShowAuthModal(true);
+    }
+  };
+
+  const handleLogout = () => {
+    api.auth.logout();
+    setCurrentUser(null);
+    setActivePage('home');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
     <MotionConfig reducedMotion="user">
       <div className="min-h-screen flex flex-col bg-[#FBF9F5] text-[#1C1917]">
@@ -55,16 +109,22 @@ export default function App() {
           activePage={activePage}
           onNavigate={handleNavigate}
           onOpenJournals={() => handleOpenJournals(selectedFacultyId)}
+          currentUser={currentUser}
+          onOpenAuth={() => {
+            setAuthMode('login');
+            setShowAuthModal(true);
+          }}
+          onOpenSubmissionForm={handleOpenSubmissionForm}
         />
 
         <main className="flex-1">
           <AnimatePresence mode="wait">
             <motion.div
               key={activePage}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.28, ease: INSTITUTIONAL_EASE }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
             >
               {(activePage === 'home' || activePage === 'about') && (
                 <HomeAboutView
@@ -98,10 +158,27 @@ export default function App() {
               )}
 
               {activePage === 'contact' && <ContactView />}
+
+              {activePage === 'member-portal' && currentUser && (
+                <MemberDashboardView
+                  user={currentUser}
+                  onLogout={handleLogout}
+                  onNavigateHome={() => handleNavigate('home')}
+                />
+              )}
+
+              {activePage === 'admin-portal' && currentUser?.role === 'admin' && (
+                <AdminDashboardView
+                  user={currentUser}
+                  onLogout={handleLogout}
+                  onNavigateHome={() => handleNavigate('home')}
+                />
+              )}
             </motion.div>
           </AnimatePresence>
         </main>
 
+        {activePage !== 'admin-portal' && (
         <footer className="mt-12 border-t border-stone-200 bg-white">
           <RevealOnScroll yOffset={14}>
             <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-10 py-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-xs text-stone-600">
@@ -139,17 +216,58 @@ export default function App() {
                 </button>
                 <button
                   type="button"
+                  onClick={() => handleNavigate('news')}
+                  className="hover:text-[#0B3B69] hover:underline cursor-pointer"
+                >
+                  News
+                </button>
+                <button
+                  type="button"
                   onClick={() => handleNavigate('contact')}
                   className="hover:text-[#0B3B69] hover:underline cursor-pointer"
                 >
                   Contact Us
                 </button>
+
+                <span className="text-stone-300">|</span>
+
+                <button
+                  type="button"
+                  onClick={() => handleNavigate('member-portal')}
+                  className="font-medium text-[#14452F] hover:underline cursor-pointer"
+                >
+                  Researcher Portal
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleNavigate('admin-portal')}
+                  className="font-medium text-[#0B3B69] hover:underline cursor-pointer"
+                >
+                  Admin Console
+                </button>
               </div>
             </div>
           </RevealOnScroll>
         </footer>
+        )}
 
         <DatabaseModal database={activeDatabase} onClose={() => setActiveDatabase(null)} />
+
+        {/* Authentication Modal */}
+        <AuthModal
+          isOpen={showAuthModal}
+          initialMode={authMode}
+          onClose={() => setShowAuthModal(false)}
+          onSuccess={(user) => {
+            setCurrentUser(user);
+            if (user.role === 'admin') {
+              handleNavigate('admin-portal');
+            } else {
+              handleNavigate('member-portal');
+            }
+          }}
+        />
       </div>
     </MotionConfig>
   );
