@@ -117,9 +117,12 @@ export function AdminDashboardView({ user, onLogout, onNavigateHome }: AdminDash
   const [newsContent, setNewsContent] = useState('');
   const [newsFile, setNewsFile] = useState<File | null>(null);
 
-  // Search filter for links
+  // Search filter and consortium accordions for links
   const [linkFilterSection, setLinkFilterSection] = useState<string>('all');
   const [linkSearchQuery, setLinkSearchQuery] = useState('');
+  const [expandedLinkSections, setExpandedLinkSections] = useState<Set<string>>(
+    new Set(['sec-services', 'sec-publications', 'sec-databases', 'sec-quick-links']),
+  );
 
   // E-Journal Catalog filter + accordion
   const [catalogFacultyFilter, setCatalogFacultyFilter] = useState('all');
@@ -449,6 +452,23 @@ export function AdminDashboardView({ user, onLogout, onNavigateHome }: AdminDash
     } catch (err) {
       showToast('Error deleting link', 'error');
     }
+  };
+
+  const toggleLinkSectionAccordion = (secId: string) => {
+    setExpandedLinkSections((prev) => {
+      const next = new Set(prev);
+      if (next.has(secId)) next.delete(secId);
+      else next.add(secId);
+      return next;
+    });
+  };
+
+  const handleExpandAllLinkSections = () => {
+    setExpandedLinkSections(new Set(sections.map((s) => s.id)));
+  };
+
+  const handleCollapseAllLinkSections = () => {
+    setExpandedLinkSections(new Set());
   };
 
   // News Handlers
@@ -1436,15 +1456,15 @@ export function AdminDashboardView({ user, onLogout, onNavigateHome }: AdminDash
             </div>
           </div>
 
-          {/* Links & Resources Table Card */}
-          <div className="rounded-xl border border-stone-200 bg-white p-6 shadow-sm space-y-4">
+          {/* Links & Resources Section Consortium Dropdowns */}
+          <div className="rounded-xl border border-stone-200 bg-white p-6 shadow-sm space-y-5">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-stone-200 pb-4">
               <div>
-                <h2 className="font-serif text-xl font-bold text-stone-900">
-                  All Frontend Links &amp; Resources
+                <h2 className="font-sans text-xl font-bold text-stone-900">
+                  Frontend Links &amp; Resources Consortium Control
                 </h2>
                 <p className="text-xs text-stone-500">
-                  Every link and source has a direct <strong>Disable/Enable module</strong> and an <strong>Update/Edit module</strong>.
+                  Links and resources separated into dedicated consortium dropdowns per section. Each section can be expanded to manage, edit, enable/disable, or add new links.
                 </p>
               </div>
 
@@ -1453,6 +1473,7 @@ export function AdminDashboardView({ user, onLogout, onNavigateHome }: AdminDash
                   type="button"
                   onClick={() => {
                     setEditingLink(null);
+                    setLinkSectionId(sections[0]?.id || 'sec-services');
                     setLinkName('');
                     setLinkUrl('');
                     setLinkDesc('');
@@ -1460,7 +1481,7 @@ export function AdminDashboardView({ user, onLogout, onNavigateHome }: AdminDash
                     setLinkFile(null);
                     setShowLinkModal(true);
                   }}
-                  className="flex items-center gap-1.5 rounded-md bg-[#14452F] px-4 py-2 text-xs font-semibold text-white hover:bg-[#0D3121] cursor-pointer"
+                  className="flex items-center gap-1.5 rounded-md bg-[#14452F] px-4 py-2 text-xs font-semibold text-white hover:bg-[#0D3121] cursor-pointer shadow-xs"
                 >
                   <Plus className="h-4 w-4" />
                   <span>Add New Link / Resource</span>
@@ -1468,159 +1489,297 @@ export function AdminDashboardView({ user, onLogout, onNavigateHome }: AdminDash
               </div>
             </div>
 
-            {/* Filter and Search Bar */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-stone-50 p-3 rounded-lg border border-stone-200">
+            {/* Filter, Search & Accordion Controls */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-stone-50 p-3 rounded-lg border border-stone-200">
               <div className="flex items-center gap-2 w-full sm:w-auto">
                 <span className="text-xs font-semibold text-stone-600 whitespace-nowrap">
-                  Filter by Section:
+                  Filter Section:
                 </span>
                 <select
                   value={linkFilterSection}
                   onChange={(e) => setLinkFilterSection(e.target.value)}
-                  className="rounded border border-stone-300 bg-white px-3 py-1.5 text-xs text-stone-900 outline-none"
+                  className="rounded border border-stone-300 bg-white px-3 py-1.5 text-xs text-stone-900 outline-none cursor-pointer"
                 >
-                  <option value="all">All Sections ({links.length})</option>
+                  <option value="all">All Sections ({sections.length})</option>
                   {sections.map((s) => (
                     <option key={s.id} value={s.id}>
-                      {s.title}
+                      {s.title} ({links.filter((l) => l.section_id === s.id).length})
                     </option>
                   ))}
                 </select>
               </div>
 
-              <div className="relative w-full sm:w-72">
+              <div className="relative flex-1 max-w-md">
                 <Search className="absolute left-2.5 top-2 h-3.5 w-3.5 text-stone-400" />
                 <input
                   type="text"
-                  placeholder="Search links by name or description..."
+                  placeholder="Search links across all sections by name, URL, or category..."
                   value={linkSearchQuery}
                   onChange={(e) => setLinkSearchQuery(e.target.value)}
-                  className="w-full rounded border border-stone-300 bg-white pl-8 pr-3 py-1.5 text-xs text-stone-900 outline-none"
+                  className="w-full rounded border border-stone-300 bg-white pl-8 pr-3 py-1.5 text-xs text-stone-900 outline-none focus:border-[#14452F]"
                 />
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={handleExpandAllLinkSections}
+                  className="rounded border border-stone-300 bg-white px-3 py-1.5 text-xs font-medium text-stone-700 hover:bg-stone-100 cursor-pointer"
+                >
+                  Expand All
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCollapseAllLinkSections}
+                  className="rounded border border-stone-300 bg-white px-3 py-1.5 text-xs font-medium text-stone-700 hover:bg-stone-100 cursor-pointer"
+                >
+                  Collapse All
+                </button>
               </div>
             </div>
 
-            {/* Table */}
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs border-collapse">
-                <thead>
-                  <tr className="border-b border-stone-200 bg-stone-50 text-stone-600 font-semibold uppercase tracking-wider">
-                    <th className="py-3 px-4">Link Name &amp; Target Section</th>
-                    <th className="py-3 px-4">URL / Uploaded File</th>
-                    <th className="py-3 px-4">Category / Badge</th>
-                    <th className="py-3 px-4">Disable / Enable Switch</th>
-                    <th className="py-3 px-4">Update &amp; Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-stone-100">
-                  {filteredLinks.map((lnk) => {
-                    const sec = sections.find((s) => s.id === lnk.section_id);
+            {/* Consortium Dropdowns for each Section */}
+            <div className="space-y-4">
+              {sections
+                .filter((s) => linkFilterSection === 'all' || s.id === linkFilterSection)
+                .map((sec) => {
+                  const secLinks = links.filter((l) => l.section_id === sec.id);
+                  const isSearching = Boolean(linkSearchQuery.trim());
+                  const query = linkSearchQuery.toLowerCase().trim();
+
+                  const filteredSecLinks = secLinks.filter((l) => {
+                    if (!isSearching) return true;
                     return (
-                      <tr
-                        key={lnk.id}
-                        className={`transition-colors ${
-                          lnk.is_active ? 'hover:bg-stone-50/60' : 'bg-red-50/30 text-stone-400'
-                        }`}
-                      >
-                        <td className="py-4 px-4 max-w-xs">
-                          <div className="font-semibold text-stone-900 flex items-center gap-1.5">
-                            <span>{lnk.name}</span>
-                            {lnk.file_path && (
-                              <span className="text-[10px] bg-blue-100 text-blue-800 px-1.5 py-0.2 rounded font-mono">
-                                PDF
-                              </span>
-                            )}
-                          </div>
-                          <div className="text-[11px] text-stone-500 font-normal">
-                            Section: {sec?.title || lnk.section_id}
-                          </div>
-                          <div className="text-[11px] text-stone-400 line-clamp-1">{lnk.description}</div>
-                        </td>
+                      l.name.toLowerCase().includes(query) ||
+                      (l.url && l.url.toLowerCase().includes(query)) ||
+                      (l.description && l.description.toLowerCase().includes(query)) ||
+                      (l.category && l.category.toLowerCase().includes(query))
+                    );
+                  });
 
-                        <td className="py-4 px-4 max-w-xs truncate text-stone-600 font-mono text-[11px]">
-                          {lnk.url ? (
-                            <a
-                              href={lnk.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-[#0B3B69] hover:underline flex items-center gap-1"
-                            >
-                              <span className="truncate">{lnk.url}</span>
-                              <ExternalLink className="h-3 w-3 shrink-0" />
-                            </a>
-                          ) : (
-                            <span className="text-stone-400">Internal Library Action ({lnk.action_type})</span>
-                          )}
-                        </td>
+                  if (isSearching && filteredSecLinks.length === 0 && !sec.title.toLowerCase().includes(query)) {
+                    return null;
+                  }
 
-                        <td className="py-4 px-4 whitespace-nowrap">
-                          <span className="text-stone-700">{lnk.category}</span>
-                          {lnk.badge && (
-                            <span className="ml-1.5 rounded bg-stone-200 px-1.5 py-0.5 text-[10px] font-semibold text-stone-700">
-                              {lnk.badge}
-                            </span>
-                          )}
-                        </td>
+                  const isExpanded = isSearching || expandedLinkSections.has(sec.id);
 
-                        {/* LIVE DISABLE / ENABLE SWITCH */}
-                        <td className="py-4 px-4 whitespace-nowrap">
-                          <button
-                            type="button"
-                            onClick={() => handleToggleLinkActive(lnk)}
-                            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold cursor-pointer transition-colors ${
-                              lnk.is_active
-                                ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
-                                : 'bg-red-100 text-red-800 hover:bg-red-200'
-                            }`}
-                          >
-                            {lnk.is_active ? (
-                              <>
-                                <Eye className="h-3.5 w-3.5" />
-                                <span>Active (Visible)</span>
-                              </>
+                  return (
+                    <div
+                      key={sec.id}
+                      className="rounded-xl border border-stone-200 overflow-hidden shadow-xs bg-white transition-all"
+                    >
+                      {/* Section Consortium Header */}
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-stone-50/90 border-b border-stone-200 gap-3">
+                        <button
+                          type="button"
+                          onClick={() => toggleLinkSectionAccordion(sec.id)}
+                          className="flex items-center gap-3 text-left flex-1 cursor-pointer"
+                        >
+                          <span className="p-1 rounded bg-[#0B3B69]/10 text-[#0B3B69]">
+                            {isExpanded ? (
+                              <ChevronDown className="h-4 w-4" />
                             ) : (
-                              <>
-                                <EyeOff className="h-3.5 w-3.5" />
-                                <span>Disabled (Hidden)</span>
-                              </>
+                              <ChevronRight className="h-4 w-4" />
                             )}
-                          </button>
-                        </td>
+                          </span>
+                          <Link2 className="h-4 w-4 text-[#0B3B69] shrink-0" />
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-sans font-bold text-sm text-stone-900">
+                                {sec.title}
+                              </h3>
+                              <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-stone-200 text-stone-700">
+                                {sec.target_nav}
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-stone-500 font-normal line-clamp-1">
+                              {sec.description || 'Navigation links section'}
+                            </p>
+                          </div>
+                        </button>
 
-                        {/* UPDATE & ACTIONS MODULE */}
-                        <td className="py-4 px-4 whitespace-nowrap space-x-2">
+                        <div className="flex items-center gap-3 pl-8 sm:pl-0">
+                          <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800">
+                            {filteredSecLinks.length} link{filteredSecLinks.length !== 1 ? 's' : ''}
+                          </span>
+
                           <button
                             type="button"
                             onClick={() => {
-                              setEditingLink(lnk);
-                              setLinkSectionId(lnk.section_id);
-                              setLinkName(lnk.name);
-                              setLinkUrl(lnk.url);
-                              setLinkDesc(lnk.description);
-                              setLinkCategory(lnk.category);
-                              setLinkBadge(lnk.badge || '');
-                              setLinkActionType(lnk.action_type as any);
+                              setEditingLink(null);
+                              setLinkSectionId(sec.id);
+                              setLinkName('');
+                              setLinkUrl('');
+                              setLinkDesc('');
+                              setLinkBadge('');
+                              setLinkFile(null);
                               setShowLinkModal(true);
                             }}
-                            className="inline-flex items-center gap-1 rounded bg-[#0B3B69] px-2.5 py-1 text-xs font-semibold text-white hover:bg-[#082847] cursor-pointer"
+                            className="inline-flex items-center gap-1 rounded bg-[#14452F] hover:bg-[#0D3121] px-2.5 py-1 text-xs font-semibold text-white cursor-pointer shadow-xs"
                           >
-                            <Edit2 className="h-3 w-3" />
-                            <span>Update Link</span>
+                            <Plus className="h-3 w-3" />
+                            <span>Add Link</span>
                           </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteLink(lnk.id)}
-                            className="p-1 text-stone-400 hover:text-red-600 cursor-pointer"
-                            title="Delete Link"
-                          >
-                            <Trash2 className="h-4 w-4 inline" />
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                        </div>
+                      </div>
+
+                      {/* Section Links Table Content */}
+                      {isExpanded && (
+                        <div>
+                          {filteredSecLinks.length === 0 ? (
+                            <div className="p-6 text-center text-xs text-stone-500 bg-stone-50/40">
+                              No links found in this section{isSearching ? ' matching your search' : ''}.
+                            </div>
+                          ) : (
+                            <div className="overflow-x-auto">
+                              <table className="w-full text-left text-xs border-collapse">
+                                <thead>
+                                  <tr className="border-b border-stone-200 bg-stone-50/70 text-stone-600 font-semibold uppercase tracking-wider">
+                                    <th className="py-2.5 px-4">Link Name &amp; Description</th>
+                                    <th className="py-2.5 px-4">URL / Uploaded Target</th>
+                                    <th className="py-2.5 px-4">Category / Badge</th>
+                                    <th className="py-2.5 px-4">Visibility</th>
+                                    <th className="py-2.5 px-4 text-right sm:text-left">Actions</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-stone-100">
+                                  {filteredSecLinks.map((lnk) => (
+                                    <tr
+                                      key={lnk.id}
+                                      className={`transition-colors ${
+                                        lnk.is_active ? 'hover:bg-stone-50/70' : 'bg-red-50/30 text-stone-400'
+                                      }`}
+                                    >
+                                      <td className="py-3 px-4 max-w-xs">
+                                        <div className="font-semibold text-stone-900 flex items-center gap-1.5">
+                                          <span>{lnk.name}</span>
+                                          {lnk.file_path && (
+                                            <span className="text-[10px] bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded font-mono">
+                                              PDF
+                                            </span>
+                                          )}
+                                        </div>
+                                        <div className="text-[11px] text-stone-400 line-clamp-1">
+                                          {lnk.description}
+                                        </div>
+                                      </td>
+
+                                      <td className="py-3 px-4 max-w-xs truncate text-stone-600 font-mono text-[11px]">
+                                        {lnk.url ? (
+                                          <a
+                                            href={lnk.url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-[#0B3B69] hover:underline inline-flex items-center gap-1"
+                                          >
+                                            <span className="truncate">{lnk.url}</span>
+                                            <ExternalLink className="h-3 w-3 shrink-0" />
+                                          </a>
+                                        ) : (
+                                          <span className="text-stone-400">
+                                            Internal Library Action ({lnk.action_type})
+                                          </span>
+                                        )}
+                                      </td>
+
+                                      <td className="py-3 px-4 whitespace-nowrap">
+                                        <span className="text-stone-700">{lnk.category}</span>
+                                        {lnk.badge && (
+                                          <span className="ml-1.5 rounded bg-stone-200 px-1.5 py-0.5 text-[10px] font-semibold text-stone-700">
+                                            {lnk.badge}
+                                          </span>
+                                        )}
+                                      </td>
+
+                                      {/* LIVE DISABLE / ENABLE SWITCH */}
+                                      <td className="py-3 px-4 whitespace-nowrap">
+                                        <button
+                                          type="button"
+                                          onClick={() => handleToggleLinkActive(lnk)}
+                                          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold cursor-pointer transition-colors ${
+                                            lnk.is_active
+                                              ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
+                                              : 'bg-red-100 text-red-800 hover:bg-red-200'
+                                          }`}
+                                        >
+                                          {lnk.is_active ? (
+                                            <>
+                                              <Eye className="h-3.5 w-3.5" />
+                                              <span>Active (Visible)</span>
+                                            </>
+                                          ) : (
+                                            <>
+                                              <EyeOff className="h-3.5 w-3.5" />
+                                              <span>Disabled (Hidden)</span>
+                                            </>
+                                          )}
+                                        </button>
+                                      </td>
+
+                                      {/* UPDATE & ACTIONS MODULE */}
+                                      <td className="py-3 px-4 whitespace-nowrap space-x-2">
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            setEditingLink(lnk);
+                                            setLinkSectionId(lnk.section_id);
+                                            setLinkName(lnk.name);
+                                            setLinkUrl(lnk.url);
+                                            setLinkDesc(lnk.description);
+                                            setLinkCategory(lnk.category);
+                                            setLinkBadge(lnk.badge || '');
+                                            setLinkActionType(lnk.action_type as any);
+                                            setShowLinkModal(true);
+                                          }}
+                                          className="inline-flex items-center gap-1 rounded bg-[#0B3B69] px-2.5 py-1 text-xs font-semibold text-white hover:bg-[#082847] cursor-pointer"
+                                        >
+                                          <Edit2 className="h-3 w-3" />
+                                          <span>Edit</span>
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleDeleteLink(lnk.id)}
+                                          className="p-1 text-stone-400 hover:text-red-600 cursor-pointer"
+                                          title="Delete Link"
+                                        >
+                                          <Trash2 className="h-4 w-4 inline" />
+                                        </button>
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          )}
+
+                          {/* + Add Link Module at the bottom of the section */}
+                          <div className="bg-stone-50/70 border-t border-stone-200 px-4 py-2.5 flex items-center justify-between">
+                            <span className="text-xs text-stone-500">
+                              Add a new link or online resource to <strong className="text-stone-700">{sec.title}</strong>
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditingLink(null);
+                                setLinkSectionId(sec.id);
+                                setLinkName('');
+                                setLinkUrl('');
+                                setLinkDesc('');
+                                setLinkBadge('');
+                                setLinkFile(null);
+                                setShowLinkModal(true);
+                              }}
+                              className="inline-flex items-center gap-1 rounded bg-[#14452F] hover:bg-[#0D3121] px-3 py-1 text-xs font-semibold text-white cursor-pointer shadow-xs"
+                            >
+                              <Plus className="h-3 w-3" />
+                              <span>Add Link to {sec.title}</span>
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
             </div>
           </div>
         </div>

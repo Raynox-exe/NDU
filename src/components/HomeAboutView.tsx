@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import {
+  ArrowRight,
   ArrowUpRight,
   BookOpen,
   Building2,
@@ -33,6 +34,7 @@ interface HomeAboutViewProps {
   onNavigate: (page: AppPage, serviceId?: string) => void;
   onSelectFacultyJournals: (facultyId: string) => void;
   onSelectDatabase: (db: DatabaseResource) => void;
+  onOpenFacultyLibrary?: (libraryId: string) => void;
 }
 
 export function HomeAboutView({
@@ -40,6 +42,7 @@ export function HomeAboutView({
   onNavigate,
   onSelectFacultyJournals,
   onSelectDatabase,
+  onOpenFacultyLibrary,
 }: HomeAboutViewProps) {
   const [selectedLibrary, setSelectedLibrary] = useState<CampusLibrary | null>(null);
 
@@ -310,27 +313,21 @@ export function HomeAboutView({
               <StaggerRevealItem key={lib.id} className="flex">
                 <button
                   type="button"
-                  onClick={() => setSelectedLibrary(isSelected ? null : lib)}
-                  className={`group flex w-full flex-col justify-between rounded-lg border p-5 text-left transition-all duration-200 hover:-translate-y-0.5 cursor-pointer ${
-                    isSelected
-                      ? 'border-[#0B3B69] bg-[#0B3B69]/[0.04]'
-                      : 'border-stone-200 bg-white hover:border-stone-300 hover:bg-stone-50/50'
-                  }`}
+                  onClick={() => {
+                    if (onOpenFacultyLibrary) {
+                      onOpenFacultyLibrary(lib.id);
+                    } else {
+                      setSelectedLibrary(isSelected ? null : lib);
+                    }
+                  }}
+                  className="group flex w-full flex-col justify-between rounded-lg border border-stone-200 bg-white p-5 text-left transition-all duration-200 hover:-translate-y-1 hover:border-[#14452F]/40 hover:shadow-md cursor-pointer"
                 >
                   <div className="space-y-2">
                     <div className="flex items-start justify-between gap-2">
-                      <Building2
-                        className={`h-4 w-4 mt-0.5 shrink-0 transition-colors ${
-                          isSelected ? 'text-[#0B3B69]' : 'text-[#14452F]'
-                        }`}
-                      />
-                      <ChevronRight
-                        className={`h-4 w-4 text-stone-400 transition-transform duration-200 ${
-                          isSelected ? 'rotate-90 text-[#0B3B69]' : 'group-hover:translate-x-0.5'
-                        }`}
-                      />
+                      <Building2 className="h-4 w-4 mt-0.5 shrink-0 text-[#14452F]" />
+                      <ChevronRight className="h-4 w-4 text-stone-400 group-hover:text-[#14452F] group-hover:translate-x-1 transition-all duration-200" />
                     </div>
-                    <h3 className="font-serif text-base font-semibold text-[#1C1917] leading-snug">
+                    <h3 className="font-serif text-base font-semibold text-[#1C1917] group-hover:text-[#14452F] leading-snug transition-colors">
                       {lib.name}
                     </h3>
                     <p className="text-xs text-stone-600 leading-relaxed">{lib.focus}</p>
@@ -338,6 +335,10 @@ export function HomeAboutView({
 
                   <div className="mt-4 pt-3 border-t border-stone-100 flex items-center justify-between text-xs">
                     <span className="text-stone-500 truncate pr-2">{lib.location}</span>
+                    <span className="text-[#14452F] font-semibold flex items-center gap-1 group-hover:underline whitespace-nowrap">
+                      <span>Explore</span>
+                      <ArrowRight className="h-3 w-3" />
+                    </span>
                   </div>
                 </button>
               </StaggerRevealItem>

@@ -10,6 +10,7 @@ import { HeaderNav, type AppPage } from './components/HeaderNav';
 import { HomeAboutView } from './components/HomeAboutView';
 import { MemberDashboardView } from './components/MemberDashboardView';
 import { AdminDashboardView } from './components/AdminDashboardView';
+import { FacultyLibraryView } from './components/FacultyLibraryView';
 import { AuthModal } from './components/AuthModal';
 import {
   INSTITUTIONAL_EASE,
@@ -29,6 +30,7 @@ export default function App() {
   const [activePage, setActivePage] = useState<AppPage>('home');
   const [highlightedServiceId, setHighlightedServiceId] = useState<string | undefined>(undefined);
   const [selectedFacultyId, setSelectedFacultyId] = useState<string>('agriculture');
+  const [selectedLibraryId, setSelectedLibraryId] = useState<string>('agri');
   const [activeDatabase, setActiveDatabase] = useState<DatabaseResource | null>(null);
 
   // Authentication & Portal states
@@ -81,6 +83,12 @@ export default function App() {
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
     }, 120);
+  };
+
+  const handleOpenFacultyLibrary = (libId = 'agri') => {
+    setSelectedLibraryId(libId);
+    setActivePage('faculty-library');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleOpenSubmissionForm = () => {
@@ -138,6 +146,26 @@ export default function App() {
                   onNavigate={handleNavigate}
                   onSelectFacultyJournals={(facId) => handleOpenJournals(facId)}
                   onSelectDatabase={(db) => setActiveDatabase(db)}
+                  onOpenFacultyLibrary={handleOpenFacultyLibrary}
+                />
+              )}
+
+              {activePage === 'faculty-library' && (
+                <FacultyLibraryView
+                  libraryId={selectedLibraryId}
+                  onBack={() => {
+                    handleNavigate('home');
+                    window.setTimeout(() => {
+                      const el = document.getElementById('our-libraries-heading');
+                      el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }, 100);
+                  }}
+                  onOpenManuscriptSubmission={handleOpenSubmissionForm}
+                  onContactLibrarian={() => handleNavigate('contact')}
+                  onSelectOtherLibrary={(otherLibId) => {
+                    setSelectedLibraryId(otherLibId);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
                 />
               )}
 
