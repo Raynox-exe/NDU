@@ -121,9 +121,15 @@ CREATE TABLE IF NOT EXISTS notifications (
 
 -- ─── JOURNAL OVERRIDES ───────────────────────────────────────
 CREATE TABLE IF NOT EXISTS journal_overrides (
-  journal_id VARCHAR(128) PRIMARY KEY,
-  is_active  TINYINT(1)   NOT NULL DEFAULT 1,
-  updated_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  journal_id    VARCHAR(128) PRIMARY KEY,
+  is_active     TINYINT(1)   NOT NULL DEFAULT 1,
+  title         VARCHAR(255) DEFAULT NULL,
+  url           TEXT         DEFAULT NULL,
+  issn          VARCHAR(64)  DEFAULT NULL,
+  eissn         VARCHAR(64)  DEFAULT NULL,
+  department_id VARCHAR(128) DEFAULT NULL,
+  is_custom     TINYINT(1)   NOT NULL DEFAULT 0,
+  updated_at    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ─── INDEXES ─────────────────────────────────────────────────

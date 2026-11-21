@@ -502,6 +502,28 @@ router.post('/journal-overrides/:id/toggle', async (req, res) => {
   }
 });
 
+router.post('/journal-overrides/:id', async (req, res) => {
+  try {
+    const updated = await db.journalOverrides.set(req.params.id, req.body);
+    res.json({ success: true, message: 'Journal entry updated.', override: updated });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Server error.' });
+  }
+});
+
+router.delete('/journal-overrides/:id', async (req, res) => {
+  try {
+    if (db.journalOverrides.delete) {
+      await db.journalOverrides.delete(req.params.id);
+    }
+    res.json({ success: true, message: 'Journal override deleted.' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Server error.' });
+  }
+});
+
 // ==========================================
 // 9. USERS DIRECTORY & ROLE MANAGEMENT
 // ==========================================

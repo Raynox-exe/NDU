@@ -404,17 +404,37 @@ export const journalOverrides = {
     return Object.fromEntries(rows.map((r) => [r.journal_id, r]));
   },
   async set(journalId, overrideData) {
-    const { is_active = true } = overrideData;
+    const current = (await one(await q('SELECT * FROM journal_overrides WHERE journal_id = ? LIMIT 1', [journalId]))) || {};
+    const is_active = overrideData.is_active !== undefined ? overrideData.is_active : (current.is_active !== undefined ? current.is_active : 1);
+    const title = overrideData.title !== undefined ? overrideData.title : (current.title || null);
+    const url = overrideData.url !== undefined ? overrideData.url : (current.url || null);
+    const issn = overrideData.issn !== undefined ? overrideData.issn : (current.issn || null);
+    const eissn = overrideData.eissn !== undefined ? overrideData.eissn : (current.eissn || null);
+    const department_id = overrideData.department_id !== undefined ? overrideData.department_id : (current.department_id || null);
+    const is_custom = overrideData.is_custom !== undefined ? (overrideData.is_custom ? 1 : 0) : (current.is_custom || 0);
+
     await q(
-      `INSERT INTO journal_overrides (journal_id, is_active)
-       VALUES (?, ?)
-       ON DUPLICATE KEY UPDATE is_active = ?, updated_at = NOW()`,
-      [journalId, bool(is_active), bool(is_active)]
+      `INSERT INTO journal_overrides (journal_id, is_active, title, url, issn, eissn, department_id, is_custom)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE 
+         is_active = VALUES(is_active),
+         title = VALUES(title),
+         url = VALUES(url),
+         issn = VALUES(issn),
+         eissn = VALUES(eissn),
+         department_id = VALUES(department_id),
+         is_custom = VALUES(is_custom),
+         updated_at = NOW()`,
+      [journalId, bool(is_active), title, url, issn, eissn, department_id, is_custom]
     );
     return one(await q('SELECT * FROM journal_overrides WHERE journal_id = ? LIMIT 1', [journalId]));
   },
   async toggle(journalId, isActive) {
     return this.set(journalId, { is_active: isActive });
+  },
+  async delete(journalId) {
+    await q('DELETE FROM journal_overrides WHERE journal_id = ?', [journalId]);
+    return true;
   },
 };
 

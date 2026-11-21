@@ -489,6 +489,23 @@ export const api = {
       return res.json();
     },
 
+    async saveJournalOverride(journalId: string, data: { title?: string; url?: string; issn?: string; eissn?: string; is_active?: boolean; department_id?: string; is_custom?: boolean }) {
+      const res = await fetch(`${API_BASE}/api/admin/journal-overrides/${journalId}`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(data),
+      });
+      return res.json();
+    },
+
+    async deleteJournalOverride(journalId: string) {
+      const res = await fetch(`${API_BASE}/api/admin/journal-overrides/${journalId}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders(),
+      });
+      return res.json();
+    },
+
     // Users
     async getUsers(): Promise<{ success: boolean; users: User[] }> {
       const res = await fetch(`${API_BASE}/api/admin/users`, { headers: getAuthHeaders() });

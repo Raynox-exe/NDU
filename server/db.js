@@ -1132,5 +1132,14 @@ export const db = {
     toggle(journalId, isActive) {
       return this.set(journalId, { is_active: Boolean(isActive) });
     },
+    delete(journalId) {
+      const data = loadDb();
+      if (data.journal_overrides && data.journal_overrides[journalId]) {
+        delete data.journal_overrides[journalId];
+        saveDb();
+        return true;
+      }
+      return false;
+    },
   },
 };

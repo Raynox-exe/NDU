@@ -26,6 +26,7 @@ import {
   LogOut,
   LayoutDashboard,
   ChevronRight,
+  ChevronDown,
   GraduationCap,
   Filter,
 } from 'lucide-react';
@@ -120,9 +121,31 @@ export function AdminDashboardView({ user, onLogout, onNavigateHome }: AdminDash
   const [linkFilterSection, setLinkFilterSection] = useState<string>('all');
   const [linkSearchQuery, setLinkSearchQuery] = useState('');
 
-  // E-Journal Catalog filter
+  // E-Journal Catalog filter + accordion
   const [catalogFacultyFilter, setCatalogFacultyFilter] = useState('all');
   const [catalogSearch, setCatalogSearch] = useState('');
+  const [expandedFaculties, setExpandedFaculties] = useState<Set<string>>(new Set());
+  const [expandedDepts, setExpandedDepts] = useState<Set<string>>(new Set());
+
+  // Custom journals added by admin per dept (in-session, keyed by dept.id)
+  const [customJournals, setCustomJournals] = useState<Record<string, Array<{ id: string; title: string; url: string; issn: string; eissn: string }>>>({});
+
+  // Add Journal Link modal
+  const [showAddJournalModal, setShowAddJournalModal] = useState(false);
+  const [addJournalDeptId, setAddJournalDeptId] = useState('');
+  const [addJournalDeptName, setAddJournalDeptName] = useState('');
+  const [addJournalTitle, setAddJournalTitle] = useState('');
+  const [addJournalUrl, setAddJournalUrl] = useState('');
+  const [addJournalIssn, setAddJournalIssn] = useState('');
+  const [addJournalEissn, setAddJournalEissn] = useState('');
+
+  // Edit Catalog Journal modal
+  const [showEditCatalogModal, setShowEditCatalogModal] = useState(false);
+  const [editCatalogJournal, setEditCatalogJournal] = useState<{ id: string; title: string; url?: string; issn?: string; eissn?: string; deptId?: string; isCustom?: boolean } | null>(null);
+  const [editCatalogTitle, setEditCatalogTitle] = useState('');
+  const [editCatalogUrl, setEditCatalogUrl] = useState('');
+  const [editCatalogIssn, setEditCatalogIssn] = useState('');
+  const [editCatalogEissn, setEditCatalogEissn] = useState('');
 
   // Article edit modal
   const [showArticleEditModal, setShowArticleEditModal] = useState(false);
@@ -501,15 +524,156 @@ export function AdminDashboardView({ user, onLogout, onNavigateHome }: AdminDash
     }
   };
 
-  // E-Journal Catalog toggle
+  // E-Journal Catalog handlers
   const handleToggleJournalOverride = async (journalId: string, currentlyActive: boolean) => {
     const newActive = !currentlyActive;
     try {
       await api.admin.toggleJournalOverride(journalId, newActive);
-      setOverrides((prev) => ({ ...prev, [journalId]: { is_active: newActive } }));
+      setOverrides((prev) => ({
+        ...prev,
+        [journalId]: { ...(prev[journalId] || {}), is_active: newActive },
+      }));
       showToast(`Journal ${newActive ? 'enabled' : 'hidden'} on Digital Library.`);
     } catch {
       showToast('Failed to update journal visibility.', 'error');
+    }
+  };
+
+  const toggleFacultyAccordion = (facultyId: string) => {
+    setExpandedFaculties((prev) => {
+      const next = new Set(prev);
+      if (next.has(facultyId)) next.delete(facultyId);
+      else next.add(facultyId);
+      return next;
+    });
+  };
+
+  const toggleDeptAccordion = (deptId: string) => {
+    setExpandedDepts((prev) => {
+      const next = new Set(prev);
+      if (next.has(deptId)) next.delete(deptId);
+      else next.add(deptId);
+      return next;
+    });
+  };
+
+  const handleExpandAll = () => {
+    const allFacIds = new Set(FACULTY_CATALOGS.map((f) => f.id));
+    const allDeptIds = new Set<string>();
+    FACULTY_CATALOGS.forEach((f) => f.departments.forEach((d) => allDeptIds.add(d.id)));
+    setExpandedFaculties(allFacIds);
+    setExpandedDepts(allDeptIds);
+  };
+
+  const handleCollapseAll = () => {
+    setExpandedFaculties(new Set());
+    setExpandedDepts(new Set());
+  };
+
+  const handleOpenAddJournal = (deptId: string, deptName: string) => {
+    setAddJournalDeptId(deptId);
+    setAddJournalDeptName(deptName);
+    setAddJournalTitle('');
+    setAddJournalUrl('');
+    setAddJournalIssn('');
+    setAddJournalEissn('');
+    setShowAddJournalModal(true);
+  };
+
+  const handleSaveAddJournal = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!addJournalDeptId || !addJournalTitle.trim()) return;
+    const newId = `custom-j-${addJournalDeptId}-${Date.now()}`;
+    const payload = {
+      title: addJournalTitle.trim(),
+      url: addJournalUrl.trim(),
+      issn: addJournalIssn.trim(),
+      eissn: addJournalEissn.trim(),
+      department_id: addJournalDeptId,
+      is_custom: true,
+      is_active: true,
+    };
+    try {
+      const res = await api.admin.saveJournalOverride(newId, payload);
+      if (res.success) {
+        setOverrides((prev) => ({
+          ...prev,
+          [newId]: { ...payload, journal_id: newId },
+        }));
+        // Ensure this department is expanded
+        setExpandedDepts((prev) => new Set(prev).add(addJournalDeptId));
+        showToast(`Journal link added to ${addJournalDeptName || 'department'}.`);
+        setShowAddJournalModal(false);
+      } else {
+        showToast(res.message || 'Failed to save journal link', 'error');
+      }
+    } catch {
+      showToast('Error adding journal link', 'error');
+    }
+  };
+
+  const handleOpenEditCatalogJournal = (journal: {
+    id: string;
+    title: string;
+    url?: string;
+    issn?: string;
+    eissn?: string;
+    deptId?: string;
+    isCustom?: boolean;
+  }) => {
+    setEditCatalogJournal(journal);
+    setEditCatalogTitle(journal.title || '');
+    setEditCatalogUrl(journal.url || '');
+    setEditCatalogIssn(journal.issn || '');
+    setEditCatalogEissn(journal.eissn || '');
+    setShowEditCatalogModal(true);
+  };
+
+  const handleSaveEditCatalogJournal = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editCatalogJournal) return;
+    const payload = {
+      title: editCatalogTitle.trim(),
+      url: editCatalogUrl.trim(),
+      issn: editCatalogIssn.trim(),
+      eissn: editCatalogEissn.trim(),
+    };
+    try {
+      const res = await api.admin.saveJournalOverride(editCatalogJournal.id, payload);
+      if (res.success) {
+        setOverrides((prev) => ({
+          ...prev,
+          [editCatalogJournal.id]: {
+            ...(prev[editCatalogJournal.id] || {}),
+            ...payload,
+          },
+        }));
+        showToast('Journal details updated successfully.');
+        setShowEditCatalogModal(false);
+      } else {
+        showToast(res.message || 'Failed to update journal', 'error');
+      }
+    } catch {
+      showToast('Error updating journal', 'error');
+    }
+  };
+
+  const handleDeleteCatalogJournal = async (journalId: string) => {
+    if (!window.confirm('Are you sure you want to delete this custom journal link?')) return;
+    try {
+      const res = await api.admin.deleteJournalOverride(journalId);
+      if (res.success) {
+        setOverrides((prev) => {
+          const next = { ...prev };
+          delete next[journalId];
+          return next;
+        });
+        showToast('Journal link removed.');
+      } else {
+        showToast(res.message || 'Failed to delete journal link', 'error');
+      }
+    } catch {
+      showToast('Error removing journal link', 'error');
     }
   };
 
@@ -1582,116 +1746,333 @@ export function AdminDashboardView({ user, onLogout, onNavigateHome }: AdminDash
       {/* ==================================================== */}
       {activeTab === 'overrides' && (
         <div className="space-y-6">
-          <div className="rounded-xl border border-stone-200 bg-white p-6 shadow-sm space-y-4">
+          <div className="rounded-xl border border-stone-200 bg-white p-6 shadow-sm space-y-5">
             <div className="border-b border-stone-200 pb-4 space-y-1">
               <h2 className="font-sans text-xl font-bold text-stone-900">
-                Departmental E-Journal Catalog Control
+                Departmental E-Journal Catalog &amp; Consortium Control
               </h2>
               <p className="text-xs text-stone-500">
-                Enable or disable individual open-access journals from appearing in the Digital Library.
-                Covers {TOTAL_JOURNAL_COUNT}+ titles across all NDU faculties and departments.
+                Manage, edit, and expand open-access journals across all NDU faculties and departments. Click on any faculty or department consortium dropdown to view links, toggle visibility, edit details, or add new journal links.
               </p>
             </div>
 
-            {/* Faculty filter + search */}
-            <div className="flex flex-col sm:flex-row items-center gap-3 bg-stone-50 p-3 rounded-lg border border-stone-200">
+            {/* Filter, Search & Accordion Controls */}
+            <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3 bg-stone-50 p-3 rounded-lg border border-stone-200">
               <select
                 value={catalogFacultyFilter}
                 onChange={(e) => setCatalogFacultyFilter(e.target.value)}
-                className="rounded border border-stone-300 bg-white px-3 py-1.5 text-xs text-stone-900 outline-none cursor-pointer"
+                className="rounded border border-stone-300 bg-white px-3 py-2 text-xs font-medium text-stone-900 outline-none cursor-pointer"
               >
                 <option value="all">All Faculties ({TOTAL_JOURNAL_COUNT} journals)</option>
                 {FACULTY_CATALOGS.map((f) => (
                   <option key={f.id} value={f.id}>{f.name}</option>
                 ))}
               </select>
-              <div className="relative flex-1 w-full">
-                <Search className="absolute left-2.5 top-2 h-3.5 w-3.5 text-stone-400" />
+
+              <div className="relative flex-1">
+                <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-stone-400" />
                 <input
                   type="text"
-                  placeholder="Search journals by title or ISSN…"
+                  placeholder="Search journals across all departments by title, ISSN, or department…"
                   value={catalogSearch}
                   onChange={(e) => setCatalogSearch(e.target.value)}
-                  className="w-full rounded border border-stone-300 bg-white pl-8 pr-3 py-1.5 text-xs text-stone-900 outline-none"
+                  className="w-full rounded border border-stone-300 bg-white pl-8 pr-3 py-2 text-xs text-stone-900 outline-none focus:border-[#14452F]"
                 />
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={handleExpandAll}
+                  className="rounded border border-stone-300 bg-white px-3 py-1.5 text-xs font-medium text-stone-700 hover:bg-stone-100 cursor-pointer"
+                >
+                  Expand All
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCollapseAll}
+                  className="rounded border border-stone-300 bg-white px-3 py-1.5 text-xs font-medium text-stone-700 hover:bg-stone-100 cursor-pointer"
+                >
+                  Collapse All
+                </button>
               </div>
             </div>
 
-            {/* Faculty sections */}
-            {FACULTY_CATALOGS
-              .filter((f) => catalogFacultyFilter === 'all' || f.id === catalogFacultyFilter)
-              .map((faculty) => {
-                const facultyJournalCount = faculty.departments.reduce((s, d) => s + d.journals.length, 0);
-                return (
-                  <div key={faculty.id} className="space-y-3">
-                    <div className="flex items-center gap-2 pt-2 border-t border-stone-100">
-                      <GraduationCap className="h-4 w-4 text-indigo-600 shrink-0" />
-                      <h3 className="font-bold text-sm text-stone-900">{faculty.name}</h3>
-                      <span className="ml-auto text-xs text-stone-500">{facultyJournalCount} journal{facultyJournalCount !== 1 ? 's' : ''}</span>
-                    </div>
-                    {faculty.departments.map((dept) => {
-                      const deptJournals = dept.journals.filter((j) =>
-                        !catalogSearch.trim() ||
-                        j.title.toLowerCase().includes(catalogSearch.toLowerCase()) ||
-                        (j.issn && j.issn.includes(catalogSearch)) ||
-                        (j.eissn && j.eissn.includes(catalogSearch))
-                      );
-                      if (deptJournals.length === 0) return null;
-                      return (
-                        <div key={dept.id} className="rounded-lg border border-stone-200 overflow-hidden">
-                          <div className="bg-indigo-50 border-b border-indigo-100 px-4 py-2 flex items-center justify-between">
-                            <span className="text-xs font-bold text-indigo-900">{dept.name}</span>
-                            <span className="text-[10px] text-indigo-600">{deptJournals.length} journal{deptJournals.length !== 1 ? 's' : ''}</span>
+            {/* Faculty Consortium Accordions */}
+            <div className="space-y-4">
+              {FACULTY_CATALOGS
+                .filter((f) => catalogFacultyFilter === 'all' || f.id === catalogFacultyFilter)
+                .map((faculty) => {
+                  const facultyDeptIds = new Set(faculty.departments.map((d) => d.id));
+                  const customJournalsInFaculty = Object.entries(overrides).filter(
+                    ([, o]: [string, any]) => o.department_id && facultyDeptIds.has(o.department_id) && o.is_custom
+                  );
+                  const baseJournalCount = faculty.departments.reduce((s, d) => s + d.journals.length, 0);
+                  const totalFacultyCount = baseJournalCount + customJournalsInFaculty.length;
+
+                  const isSearching = Boolean(catalogSearch.trim());
+                  const query = catalogSearch.toLowerCase().trim();
+
+                  const matchingDepts = faculty.departments.filter((dept) => {
+                    if (!isSearching) return true;
+                    if (dept.name.toLowerCase().includes(query)) return true;
+                    const deptBase = dept.journals.some(
+                      (j) =>
+                        j.title.toLowerCase().includes(query) ||
+                        (j.issn && j.issn.toLowerCase().includes(query)) ||
+                        (j.eissn && j.eissn.toLowerCase().includes(query))
+                    );
+                    const deptCustom = Object.entries(overrides).some(
+                      ([, o]: [string, any]) =>
+                        o.department_id === dept.id &&
+                        o.is_custom &&
+                        (o.title?.toLowerCase().includes(query) ||
+                          o.issn?.toLowerCase().includes(query) ||
+                          o.eissn?.toLowerCase().includes(query))
+                    );
+                    return deptBase || deptCustom;
+                  });
+
+                  if (isSearching && matchingDepts.length === 0) return null;
+
+                  const isFacultyExpanded = isSearching || expandedFaculties.has(faculty.id);
+
+                  return (
+                    <div
+                      key={faculty.id}
+                      className="rounded-xl border border-stone-200 overflow-hidden shadow-xs transition-all bg-white"
+                    >
+                      {/* Faculty Consortium Dropdown Header */}
+                      <button
+                        type="button"
+                        onClick={() => toggleFacultyAccordion(faculty.id)}
+                        className="w-full flex items-center justify-between p-4 bg-stone-50/80 hover:bg-stone-100/80 border-b border-stone-200 text-left transition-colors cursor-pointer"
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="p-1 rounded bg-indigo-50 text-indigo-700">
+                            {isFacultyExpanded ? (
+                              <ChevronDown className="h-4 w-4" />
+                            ) : (
+                              <ChevronRight className="h-4 w-4" />
+                            )}
+                          </span>
+                          <GraduationCap className="h-5 w-5 text-indigo-600 shrink-0" />
+                          <div>
+                            <h3 className="font-sans font-bold text-sm text-stone-900">
+                              {faculty.name}
+                            </h3>
+                            <p className="text-[11px] text-stone-500 font-normal">
+                              {faculty.departments.length} Academic Departments
+                            </p>
                           </div>
-                          <table className="w-full text-left text-xs border-collapse">
-                            <thead>
-                              <tr className="border-b border-stone-200 bg-stone-50 text-stone-600 font-semibold uppercase tracking-wider">
-                                <th className="py-2 px-3">Journal Title</th>
-                                <th className="py-2 px-3 hidden sm:table-cell">ISSN / eISSN</th>
-                                <th className="py-2 px-3">Visibility</th>
-                              </tr>
-                            </thead>
-                            <tbody className="divide-y divide-stone-100">
-                              {deptJournals.map((j) => {
-                                const isActive = overrides[j.id]?.is_active !== false;
-                                return (
-                                  <tr key={j.id} className={`transition-colors ${isActive ? 'hover:bg-stone-50/60' : 'bg-red-50/40'}`}>
-                                    <td className="py-2.5 px-3 font-medium text-stone-900 max-w-xs">
-                                      {j.url ? (
-                                        <a href={j.url} target="_blank" rel="noopener noreferrer" className="text-[#0B3B69] hover:underline inline-flex items-center gap-1">
-                                          {j.title}<ExternalLink className="h-3 w-3 shrink-0" />
-                                        </a>
-                                      ) : j.title}
-                                    </td>
-                                    <td className="py-2.5 px-3 text-stone-500 font-mono text-[11px] hidden sm:table-cell">
-                                      {[j.issn, j.eissn].filter(Boolean).join(' / ') || '—'}
-                                    </td>
-                                    <td className="py-2.5 px-3">
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-800">
+                            {totalFacultyCount} journals
+                          </span>
+                        </div>
+                      </button>
+
+                      {/* Faculty Content: Departments Consortium Dropdowns */}
+                      {isFacultyExpanded && (
+                        <div className="p-4 space-y-3 bg-stone-100/40">
+                          {matchingDepts.map((dept) => {
+                            const customForDept = Object.entries(overrides)
+                              .filter(([, o]: [string, any]) => o.department_id === dept.id && o.is_custom)
+                              .map(([id, o]: [string, any]) => ({
+                                id,
+                                title: o.title || 'Untitled Journal',
+                                url: o.url || '',
+                                issn: o.issn || '',
+                                eissn: o.eissn || '',
+                                isCustom: true,
+                              }));
+
+                            const combinedJournals = [
+                              ...dept.journals.map((j) => {
+                                const o = overrides[j.id];
+                                return {
+                                  id: j.id,
+                                  title: o?.title || j.title,
+                                  url: o?.url || j.url,
+                                  issn: o?.issn !== undefined ? o.issn : j.issn,
+                                  eissn: o?.eissn !== undefined ? o.eissn : j.eissn,
+                                  isCustom: false,
+                                };
+                              }),
+                              ...customForDept,
+                            ];
+
+                            const filteredJournals = combinedJournals.filter((j) => {
+                              if (!isSearching) return true;
+                              return (
+                                j.title.toLowerCase().includes(query) ||
+                                (j.issn && j.issn.toLowerCase().includes(query)) ||
+                                (j.eissn && j.eissn.toLowerCase().includes(query))
+                              );
+                            });
+
+                            const isDeptExpanded = isSearching || expandedDepts.has(dept.id);
+
+                            return (
+                              <div
+                                key={dept.id}
+                                className="rounded-lg border border-stone-200 bg-white overflow-hidden shadow-xs"
+                              >
+                                {/* Department Consortium Dropdown Header */}
+                                <button
+                                  type="button"
+                                  onClick={() => toggleDeptAccordion(dept.id)}
+                                  className="w-full flex items-center justify-between px-4 py-2.5 bg-indigo-50/70 hover:bg-indigo-100/60 border-b border-indigo-100/80 text-left transition-colors cursor-pointer"
+                                >
+                                  <div className="flex items-center gap-2.5">
+                                    <span className="text-indigo-700">
+                                      {isDeptExpanded ? (
+                                        <ChevronDown className="h-4 w-4" />
+                                      ) : (
+                                        <ChevronRight className="h-4 w-4" />
+                                      )}
+                                    </span>
+                                    <span className="text-xs font-bold text-stone-900">
+                                      {dept.name}
+                                    </span>
+                                  </div>
+                                  <span className="text-[11px] font-semibold text-indigo-700 bg-indigo-100/70 px-2 py-0.5 rounded-full">
+                                    {combinedJournals.length} links
+                                  </span>
+                                </button>
+
+                                {/* Department Journals List */}
+                                {isDeptExpanded && (
+                                  <div>
+                                    <div className="overflow-x-auto">
+                                      <table className="w-full text-left text-xs border-collapse">
+                                        <thead>
+                                          <tr className="border-b border-stone-200 bg-stone-50 text-stone-600 font-semibold uppercase tracking-wider">
+                                            <th className="py-2.5 px-4">Journal Title &amp; Link</th>
+                                            <th className="py-2.5 px-3 hidden sm:table-cell">ISSN / eISSN</th>
+                                            <th className="py-2.5 px-4 text-right sm:text-left">Visibility &amp; Edit</th>
+                                          </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-stone-100">
+                                          {filteredJournals.map((j) => {
+                                            const isActive = overrides[j.id]?.is_active !== false;
+                                            return (
+                                              <tr
+                                                key={j.id}
+                                                className={`transition-colors ${
+                                                  isActive ? 'hover:bg-stone-50/70' : 'bg-red-50/40'
+                                                }`}
+                                              >
+                                                <td className="py-2.5 px-4 font-medium text-stone-900 max-w-sm">
+                                                  <div className="flex items-center gap-2 flex-wrap">
+                                                    {j.url ? (
+                                                      <a
+                                                        href={j.url}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="text-[#0B3B69] hover:underline font-semibold inline-flex items-center gap-1"
+                                                      >
+                                                        {j.title}
+                                                        <ExternalLink className="h-3 w-3 shrink-0" />
+                                                      </a>
+                                                    ) : (
+                                                      <span className="font-semibold text-stone-800">{j.title}</span>
+                                                    )}
+                                                    {j.isCustom && (
+                                                      <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800">
+                                                        Custom
+                                                      </span>
+                                                    )}
+                                                  </div>
+                                                </td>
+
+                                                <td className="py-2.5 px-3 text-stone-500 font-mono text-[11px] hidden sm:table-cell">
+                                                  {[j.issn, j.eissn].filter(Boolean).join(' / ') || '—'}
+                                                </td>
+
+                                                <td className="py-2.5 px-4">
+                                                  <div className="flex items-center justify-end sm:justify-start gap-2">
+                                                    {/* Visible toggle button */}
+                                                    <button
+                                                      type="button"
+                                                      onClick={() => handleToggleJournalOverride(j.id, isActive)}
+                                                      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold cursor-pointer transition-colors ${
+                                                        isActive
+                                                          ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
+                                                          : 'bg-red-100 text-red-800 hover:bg-red-200'
+                                                      }`}
+                                                    >
+                                                      {isActive ? (
+                                                        <>
+                                                          <Eye className="h-3 w-3" />
+                                                          <span>Visible</span>
+                                                        </>
+                                                      ) : (
+                                                        <>
+                                                          <EyeOff className="h-3 w-3" />
+                                                          <span>Hidden</span>
+                                                        </>
+                                                      )}
+                                                    </button>
+
+                                                    {/* Edit button right after visible button */}
+                                                    <button
+                                                      type="button"
+                                                      onClick={() => handleOpenEditCatalogJournal(j)}
+                                                      className="inline-flex items-center gap-1 rounded bg-[#0B3B69] hover:bg-[#082847] text-white px-2.5 py-1 text-xs font-semibold cursor-pointer transition-colors"
+                                                      title="Edit Journal Details"
+                                                    >
+                                                      <Edit2 className="h-3 w-3" />
+                                                      <span>Edit</span>
+                                                    </button>
+
+                                                    {/* Delete button if custom */}
+                                                    {j.isCustom && (
+                                                      <button
+                                                        type="button"
+                                                        onClick={() => handleDeleteCatalogJournal(j.id)}
+                                                        className="p-1 text-stone-400 hover:text-red-600 cursor-pointer"
+                                                        title="Delete Custom Journal Link"
+                                                      >
+                                                        <Trash2 className="h-3.5 w-3.5" />
+                                                      </button>
+                                                    )}
+                                                  </div>
+                                                </td>
+                                              </tr>
+                                            );
+                                          })}
+                                        </tbody>
+                                      </table>
+                                    </div>
+
+                                    {/* + Add Link Module after the last link of every department */}
+                                    <div className="bg-stone-50/80 border-t border-stone-200 px-4 py-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                                      <div className="text-xs text-stone-600">
+                                        <span className="font-semibold text-stone-800">+ Add Link:</span> Need to add another open-access journal or departmental link for <span className="font-semibold text-stone-900">{dept.name}</span>?
+                                      </div>
                                       <button
                                         type="button"
-                                        onClick={() => handleToggleJournalOverride(j.id, isActive)}
-                                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold cursor-pointer transition-colors ${
-                                          isActive
-                                            ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
-                                            : 'bg-red-100 text-red-800 hover:bg-red-200'
-                                        }`}
+                                        onClick={() => handleOpenAddJournal(dept.id, dept.name)}
+                                        className="inline-flex items-center gap-1.5 rounded-lg bg-[#14452F] hover:bg-[#0D3121] px-3.5 py-1.5 text-xs font-semibold text-white transition-colors cursor-pointer shadow-xs shrink-0"
                                       >
-                                        {isActive
-                                          ? <><Eye className="h-3.5 w-3.5" /><span>Visible</span></>
-                                          : <><EyeOff className="h-3.5 w-3.5" /><span>Hidden</span></>}
+                                        <Plus className="h-3.5 w-3.5" />
+                                        <span>Add Link</span>
                                       </button>
-                                    </td>
-                                  </tr>
-                                );
-                              })}
-                            </tbody>
-                          </table>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
                         </div>
-                      );
-                    })}
-                  </div>
-                );
-              })}
+                      )}
+                    </div>
+                  );
+                })}
+            </div>
           </div>
         </div>
       )}
@@ -2571,6 +2952,150 @@ export function AdminDashboardView({ user, onLogout, onNavigateHome }: AdminDash
                   Cancel
                 </button>
                 <button type="submit" className="rounded bg-[#14452F] px-4 py-2 text-xs font-semibold text-white hover:bg-[#0D3121] cursor-pointer">
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ==================================================== */}
+      {/* ADD JOURNAL LINK MODAL */}
+      {/* ==================================================== */}
+      {showAddJournalModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-stone-200 pb-3">
+              <div>
+                <h3 className="font-sans font-bold text-stone-900 text-base">Add Journal Link</h3>
+                <p className="text-xs text-stone-500 mt-0.5">Department: <span className="font-semibold text-stone-800">{addJournalDeptName}</span></p>
+              </div>
+              <button type="button" onClick={() => setShowAddJournalModal(false)} className="text-stone-400 hover:text-stone-600 cursor-pointer">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <form onSubmit={handleSaveAddJournal} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-stone-700 mb-1">Journal Title *</label>
+                <input
+                  type="text"
+                  value={addJournalTitle}
+                  onChange={(e) => setAddJournalTitle(e.target.value)}
+                  required
+                  placeholder="e.g. Niger Delta Journal of Agricultural Economics"
+                  className="w-full rounded border border-stone-300 px-3 py-2 text-sm text-stone-900 outline-none focus:border-[#14452F]"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-stone-700 mb-1">Journal Direct Link / URL *</label>
+                <input
+                  type="url"
+                  value={addJournalUrl}
+                  onChange={(e) => setAddJournalUrl(e.target.value)}
+                  required
+                  placeholder="https://example.com/journal"
+                  className="w-full rounded border border-stone-300 px-3 py-2 text-sm text-stone-900 outline-none focus:border-[#14452F]"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-stone-700 mb-1">ISSN (Optional)</label>
+                  <input
+                    type="text"
+                    value={addJournalIssn}
+                    onChange={(e) => setAddJournalIssn(e.target.value)}
+                    placeholder="e.g. 1234-5678"
+                    className="w-full rounded border border-stone-300 px-3 py-2 text-sm text-stone-900 outline-none focus:border-[#14452F]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-stone-700 mb-1">eISSN (Optional)</label>
+                  <input
+                    type="text"
+                    value={addJournalEissn}
+                    onChange={(e) => setAddJournalEissn(e.target.value)}
+                    placeholder="e.g. 8765-4321"
+                    className="w-full rounded border border-stone-300 px-3 py-2 text-sm text-stone-900 outline-none focus:border-[#14452F]"
+                  />
+                </div>
+              </div>
+              <div className="flex gap-3 justify-end pt-2">
+                <button type="button" onClick={() => setShowAddJournalModal(false)} className="rounded border border-stone-300 px-4 py-2 text-xs font-semibold text-stone-700 hover:bg-stone-50 cursor-pointer">
+                  Cancel
+                </button>
+                <button type="submit" className="rounded bg-[#14452F] px-4 py-2 text-xs font-semibold text-white hover:bg-[#0D3121] cursor-pointer">
+                  Add Journal Link
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ==================================================== */}
+      {/* EDIT CATALOG JOURNAL MODAL */}
+      {/* ==================================================== */}
+      {showEditCatalogModal && editCatalogJournal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-stone-200 pb-3">
+              <div>
+                <h3 className="font-sans font-bold text-stone-900 text-base">Edit Journal Details</h3>
+                <p className="text-xs text-stone-500 mt-0.5">Modify bibliographic and link information</p>
+              </div>
+              <button type="button" onClick={() => setShowEditCatalogModal(false)} className="text-stone-400 hover:text-stone-600 cursor-pointer">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <form onSubmit={handleSaveEditCatalogJournal} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-stone-700 mb-1">Journal Title *</label>
+                <input
+                  type="text"
+                  value={editCatalogTitle}
+                  onChange={(e) => setEditCatalogTitle(e.target.value)}
+                  required
+                  className="w-full rounded border border-stone-300 px-3 py-2 text-sm text-stone-900 outline-none focus:border-[#0B3B69]"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-stone-700 mb-1">Journal Link / URL</label>
+                <input
+                  type="url"
+                  value={editCatalogUrl}
+                  onChange={(e) => setEditCatalogUrl(e.target.value)}
+                  placeholder="https://..."
+                  className="w-full rounded border border-stone-300 px-3 py-2 text-sm text-stone-900 outline-none focus:border-[#0B3B69]"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-stone-700 mb-1">ISSN</label>
+                  <input
+                    type="text"
+                    value={editCatalogIssn}
+                    onChange={(e) => setEditCatalogIssn(e.target.value)}
+                    placeholder="e.g. 1234-5678"
+                    className="w-full rounded border border-stone-300 px-3 py-2 text-sm text-stone-900 outline-none focus:border-[#0B3B69]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-stone-700 mb-1">eISSN</label>
+                  <input
+                    type="text"
+                    value={editCatalogEissn}
+                    onChange={(e) => setEditCatalogEissn(e.target.value)}
+                    placeholder="e.g. 8765-4321"
+                    className="w-full rounded border border-stone-300 px-3 py-2 text-sm text-stone-900 outline-none focus:border-[#0B3B69]"
+                  />
+                </div>
+              </div>
+              <div className="flex gap-3 justify-end pt-2">
+                <button type="button" onClick={() => setShowEditCatalogModal(false)} className="rounded border border-stone-300 px-4 py-2 text-xs font-semibold text-stone-700 hover:bg-stone-50 cursor-pointer">
+                  Cancel
+                </button>
+                <button type="submit" className="rounded bg-[#0B3B69] px-4 py-2 text-xs font-semibold text-white hover:bg-[#082847] cursor-pointer">
                   Save Changes
                 </button>
               </div>

@@ -164,14 +164,36 @@ export function DigitalLibraryView({
       for (const dept of fac.departments) {
         for (const j of dept.journals) {
           // Check if admin has disabled this journal
-          if (journalOverrides[j.id]?.is_active === false) continue;
+          const o = journalOverrides[j.id];
+          if (o?.is_active === false) continue;
           list.push({
             ...j,
+            ...(o?.title ? { title: o.title } : {}),
+            ...(o?.url ? { url: o.url } : {}),
+            ...(o?.issn !== undefined && o.issn !== null ? { issn: o.issn } : {}),
+            ...(o?.eissn !== undefined && o.eissn !== null ? { eissn: o.eissn } : {}),
             facultyName: fac.shortName,
             facultyId: fac.id,
             deptName: dept.name,
             deptId: dept.id,
           });
+        }
+
+        // Custom added journals for this department
+        for (const [id, o] of Object.entries(journalOverrides)) {
+          if (o.department_id === dept.id && o.is_custom && o.is_active !== false) {
+            list.push({
+              id,
+              title: o.title || 'Untitled Journal',
+              url: o.url || '',
+              issn: o.issn || '',
+              eissn: o.eissn || '',
+              facultyName: fac.shortName,
+              facultyId: fac.id,
+              deptName: dept.name,
+              deptId: dept.id,
+            } as any);
+          }
         }
       }
     }
@@ -231,16 +253,45 @@ export function DigitalLibraryView({
     }
 
     if (!activeDepartment) return [];
-    return activeDepartment.journals
+    const baseList = activeDepartment.journals
       .filter((j) => journalOverrides[j.id]?.is_active !== false)
-      .filter((j) => subCategoryFilter === 'All' || j.subCategory === subCategoryFilter)
-      .map((j) => ({
-        ...j,
+      .map((j) => {
+        const o = journalOverrides[j.id];
+        return {
+          ...j,
+          ...(o?.title ? { title: o.title } : {}),
+          ...(o?.url ? { url: o.url } : {}),
+          ...(o?.issn !== undefined && o.issn !== null ? { issn: o.issn } : {}),
+          ...(o?.eissn !== undefined && o.eissn !== null ? { eissn: o.eissn } : {}),
+          facultyName: activeFaculty.shortName,
+          facultyId: activeFaculty.id,
+          deptName: activeDepartment.name,
+          deptId: activeDepartment.id,
+        };
+      });
+
+    const customList = Object.entries(journalOverrides)
+      .filter(
+        ([id, o]: [string, any]) =>
+          o.department_id === activeDepartment.id &&
+          o.is_custom &&
+          o.is_active !== false &&
+          !activeDepartment.journals.some((j) => j.id === id),
+      )
+      .map(([id, o]: [string, any]) => ({
+        id,
+        title: o.title || 'Untitled Journal',
+        url: o.url || '',
+        issn: o.issn || '',
+        eissn: o.eissn || '',
         facultyName: activeFaculty.shortName,
         facultyId: activeFaculty.id,
         deptName: activeDepartment.name,
         deptId: activeDepartment.id,
       }));
+
+    return [...baseList, ...customList]
+      .filter((j) => subCategoryFilter === 'All' || (j as any).subCategory === subCategoryFilter);
   }, [
     searchQuery,
     showBookmarksOnly,
