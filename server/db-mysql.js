@@ -323,10 +323,25 @@ export const links = {
 export const news = {
   async list(includeInactive = true) {
     const where = includeInactive ? '' : 'WHERE is_active = 1';
-    return q(`SELECT * FROM news ${where} ORDER BY created_at DESC`);
+    const rows = await q(`SELECT * FROM news ${where} ORDER BY created_at DESC`);
+    return rows.map((r) => ({
+      ...r,
+      date: r.date_tag || r.date,
+      content: r.full_content || r.content,
+      file_path: r.pdf_path || r.file_path,
+      is_active: Boolean(r.is_active),
+    }));
   },
   async findById(id) {
-    return one(await q('SELECT * FROM news WHERE id = ? LIMIT 1', [id]));
+    const r = await one(await q('SELECT * FROM news WHERE id = ? LIMIT 1', [id]));
+    if (!r) return null;
+    return {
+      ...r,
+      date: r.date_tag || r.date,
+      content: r.full_content || r.content,
+      file_path: r.pdf_path || r.file_path,
+      is_active: Boolean(r.is_active),
+    };
   },
   async create(data) {
     const id = data.id || `news-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
@@ -347,9 +362,14 @@ export const news = {
     return this.findById(id);
   },
   async update(id, updates) {
+    const mapped = { ...updates };
+    if (mapped.date !== undefined && mapped.date_tag === undefined) mapped.date_tag = mapped.date;
+    if (mapped.content !== undefined && mapped.full_content === undefined) mapped.full_content = mapped.content;
+    if (mapped.file_path !== undefined && mapped.pdf_path === undefined) mapped.pdf_path = mapped.file_path;
+
     const allowed = ['title', 'category', 'date_tag', 'venue', 'summary', 'full_content', 'pdf_path', 'is_active'];
     const fields = [], vals = [];
-    for (const [k, v] of Object.entries(updates)) {
+    for (const [k, v] of Object.entries(mapped)) {
       if (allowed.includes(k)) {
         fields.push(`\`${k}\` = ?`);
         vals.push(k === 'is_active' ? bool(v) : v);

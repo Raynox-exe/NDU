@@ -1,4 +1,4 @@
-import { useState, useEffect, type FormEvent } from 'react';
+import { useState, useEffect, useMemo, type FormEvent } from 'react';
 import {
   ArrowRight,
   Calendar,
@@ -14,6 +14,13 @@ import {
   Key,
   Copy,
   Check,
+  Search,
+  RefreshCw,
+  Bell,
+  Newspaper,
+  Sparkles,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import {
@@ -43,28 +50,10 @@ export function ServicesView({
   onOpenJournals,
 }: ServicesViewProps) {
   const [category, setCategory] = useState<string>('All');
-  const [activeServices, setActiveServices] = useState<any[]>(LIBRARY_SERVICES);
+  // Always use the static LIBRARY_SERVICES — dynamic DB links are raw URL objects
+  // that don't carry the service card fields (description, location, hours, badge).
+  const activeServices = LIBRARY_SERVICES;
   const categories = ['All', 'Core Services', 'Research & Digital', 'Collections & Facilities'];
-
-  useEffect(() => {
-    let isMounted = true;
-    api.public
-      .getSectionsAndLinks()
-      .then((res) => {
-        if (isMounted && res.success && res.allActiveLinks) {
-          const serviceLinks = res.allActiveLinks.filter(
-            (l) => l.section_id === 'sec-services' && l.is_active !== false
-          );
-          if (serviceLinks.length > 0) {
-            setActiveServices(serviceLinks);
-          }
-        }
-      })
-      .catch(() => {});
-    return () => {
-      isMounted = false;
-    };
-  }, []);
 
   const filtered = activeServices.filter(
     (s) => category === 'All' || s.category === category
@@ -199,7 +188,7 @@ export function ServicesView({
   );
 }
 
-export function NewsEventsView({ onOpenJournals }: { onOpenJournals: () => void }) {
+export function NewsEventsView({ onOpenJournals: _onOpenJournals }: { onOpenJournals: () => void }) {
   const [newsItems, setNewsItems] = useState<DynamicNews[]>(() =>
     LIBRARY_NEWS_EVENTS.map((item) => ({
       id: item.id,
@@ -214,153 +203,347 @@ export function NewsEventsView({ onOpenJournals }: { onOpenJournals: () => void 
     }))
   );
   const [selectedNews, setSelectedNews] = useState<DynamicNews | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const fetchNews = async () => {
+    setIsRefreshing(true);
+    try {
+      const res = await api.public.getNews();
+      if (res.success && res.news && res.news.length > 0) {
+        setNewsItems(res.news.filter((n) => n.is_active !== false));
+      }
+    } catch (err) {
+      console.error('Error fetching public news:', err);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   useEffect(() => {
-    let isMounted = true;
-    api.public
-      .getNews()
-      .then((res) => {
-        if (isMounted && res.success && res.news && res.news.length > 0) {
-          setNewsItems(res.news.filter((n) => n.is_active !== false));
-        }
-      })
-      .catch((err) => {
-        console.error('Error fetching public news:', err);
-      });
-
-    return () => {
-      isMounted = false;
-    };
+    fetchNews();
   }, []);
+
+  // Compute available categories dynamically
+  const categories = useMemo(() => {
+    const cats = new Set<string>();
+    newsItems.forEach((n) => {
+      if (n.category) cats.add(n.category);
+    });
+    return Array.from(cats);
+  }, [newsItems]);
+
+  // Filtered news items
+  const filteredNews = useMemo(() => {
+    const q = searchQuery.toLowerCase().trim();
+    return newsItems.filter((item) => {
+      if (selectedCategory !== 'all' && item.category !== selectedCategory) return false;
+      if (!q) return true;
+      return (
+        item.title.toLowerCase().includes(q) ||
+        (item.summary && item.summary.toLowerCase().includes(q)) ||
+        (item.venue && item.venue.toLowerCase().includes(q)) ||
+        (item.content && item.content.toLowerCase().includes(q)) ||
+        (item.category && item.category.toLowerCase().includes(q))
+      );
+    });
+  }, [newsItems, selectedCategory, searchQuery]);
+
+  const latestNews = newsItems[0];
 
   return (
     <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-10 py-8 space-y-8 animate-fade-in">
+      {/* Header with Title and Live Updates Banner */}
       <RevealOnLoad delay={0}>
-        <div className="border-b border-stone-200 pb-6 space-y-2 max-w-2xl">
-          <p className="text-xs uppercase tracking-[0.14em] text-[#14452F] font-semibold">
-            Official University News &amp; Bulletins
-          </p>
-          <h1 className="font-serif text-3xl sm:text-4xl font-semibold tracking-tight text-[#1C1917] [text-wrap:balance]">
-            Library News, Circulars &amp; Events
-          </h1>
-          <p className="text-sm sm:text-base text-stone-600 leading-relaxed">
-            Administrative circulars, university weekly bulletins, symposiums, ZOOM research conferences,
-            and digital orientation schedules for Niger Delta University students and faculty.
-          </p>
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-stone-200 pb-6">
+          <div className="space-y-2 max-w-2xl">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-600"></span>
+              </span>
+              <span>Live Announcements &amp; University Bulletins</span>
+              <span className="text-stone-300">·</span>
+              <span className="text-emerald-700 font-mono text-[11px]">{newsItems.length} Published</span>
+            </div>
+
+            <h1 className="font-serif text-3xl sm:text-4xl font-semibold tracking-tight text-[#1C1917] [text-wrap:balance]">
+              Library News, Circulars &amp; Events
+            </h1>
+            <p className="text-sm sm:text-base text-stone-600 leading-relaxed">
+              Administrative circulars, university weekly bulletins, symposiums, ZOOM research conferences,
+              and digital orientation schedules for Niger Delta University students, researchers, and faculty.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={fetchNews}
+            disabled={isRefreshing}
+            className="inline-flex items-center gap-2 rounded-lg border border-stone-300 bg-white px-3.5 py-2 text-xs font-semibold text-stone-700 hover:bg-stone-50 active:scale-98 transition-all cursor-pointer self-start md:self-auto shadow-xs shrink-0"
+            title="Refresh latest announcements"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 text-stone-500 ${isRefreshing ? 'animate-spin' : ''}`} />
+            <span>{isRefreshing ? 'Checking Updates…' : 'Refresh Updates'}</span>
+          </button>
         </div>
       </RevealOnLoad>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {newsItems.map((item) => {
-          const filePath = item.file_path
-            ? item.file_path.startsWith('/')
-              ? item.file_path
-              : `/uploads/resources/${item.file_path}`
-            : null;
+      {/* Latest Featured News Banner (if present) */}
+      {latestNews && (
+        <div className="rounded-xl border border-emerald-200 bg-gradient-to-r from-emerald-50/70 to-stone-50 p-5 sm:p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-1.5 flex-1">
+            <div className="flex items-center gap-2 text-xs font-semibold text-emerald-800">
+              <Bell className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+              <span>CURRENT PUBLISHED BULLETIN</span>
+              <span>·</span>
+              <span className="text-stone-500 font-normal">{latestNews.date}</span>
+            </div>
+            <h2 className="font-serif text-lg sm:text-xl font-bold text-stone-900 leading-snug">
+              {latestNews.title}
+            </h2>
+            <p className="text-xs text-stone-600 line-clamp-2 max-w-3xl">
+              {latestNews.summary}
+            </p>
+          </div>
 
-          return (
-            <article
-              key={item.id}
-              className="flex w-full flex-col justify-between rounded-xl border border-stone-200 bg-white p-6 space-y-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-stone-300 hover:shadow-md"
+          <button
+            type="button"
+            onClick={() => setSelectedNews(latestNews)}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-[#14452F] hover:bg-[#0D3121] px-4 py-2 text-xs font-semibold text-white transition-colors cursor-pointer shrink-0 shadow-xs self-start sm:self-auto"
+          >
+            <span>Read Bulletin</span>
+            <ArrowRight className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
+
+      {/* Filter and Search Bar */}
+      <div className="rounded-xl border border-stone-200 bg-white p-4 sm:p-5 shadow-xs space-y-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-stone-400" />
+            <input
+              type="text"
+              placeholder="Search announcements by headline, venue, or keywords…"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full rounded-lg border border-stone-300 bg-white pl-9 pr-3 py-2 text-xs text-stone-900 outline-none focus:border-[#14452F] focus:ring-1 focus:ring-[#14452F] transition-all"
+            />
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold text-stone-600 whitespace-nowrap">Category:</span>
+            <select
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              className="rounded-lg border border-stone-300 bg-white px-3 py-2 text-xs font-medium text-stone-900 outline-none cursor-pointer"
             >
-              <div className="space-y-3">
-                <div className="flex flex-wrap items-center gap-2 text-xs text-stone-500">
-                  <span className="font-semibold text-[#14452F] bg-[#14452F]/10 px-2 py-0.5 rounded">
-                    {item.category}
-                  </span>
-                  {filePath && (
-                    <span className="font-bold text-red-700 bg-red-100 border border-red-200 px-2 py-0.5 rounded text-[10px] uppercase tracking-wider inline-flex items-center gap-1">
-                      <FileText className="h-3 w-3" />
-                      PDF Attached
-                    </span>
-                  )}
-                  <span aria-hidden="true">·</span>
-                  <span className="inline-flex items-center gap-1">
-                    <Calendar className="h-3.5 w-3.5" />
-                    {item.date}
-                  </span>
-                </div>
+              <option value="all">All Categories ({newsItems.length})</option>
+              {categories.map((c) => (
+                <option key={c} value={c}>
+                  {c} ({newsItems.filter((n) => n.category === c).length})
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
 
-                <h2 className="font-serif text-xl font-bold text-stone-900 leading-snug">
-                  {item.title}
-                </h2>
-
-                <p className="text-sm text-stone-600 leading-relaxed line-clamp-3">
-                  {item.summary}
-                </p>
-              </div>
-
-              <div className="pt-4 border-t border-stone-100 flex flex-wrap items-center justify-between gap-3 text-xs text-stone-500">
-                <span className="truncate max-w-[180px] font-medium text-stone-600">{item.venue}</span>
-                <div className="flex items-center gap-2">
-                  {filePath && (
-                    <a
-                      href={filePath}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 font-semibold text-emerald-800 bg-emerald-50 border border-emerald-300 hover:bg-emerald-100 px-3 py-1.5 rounded-md text-xs transition-colors"
-                      title="Download Attached PDF"
-                    >
-                      <Download className="h-3.5 w-3.5" />
-                      <span>Download PDF</span>
-                    </a>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => setSelectedNews(item)}
-                    className="font-semibold text-[#0B3B69] hover:underline px-2 py-1.5 cursor-pointer whitespace-nowrap"
-                  >
-                    Read Announcement →
-                  </button>
-                </div>
-              </div>
-            </article>
-          );
-        })}
+        {/* Quick Category Pills */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs no-scrollbar">
+          <button
+            type="button"
+            onClick={() => setSelectedCategory('all')}
+            className={`px-3 py-1 rounded-full font-semibold transition-all whitespace-nowrap cursor-pointer ${
+              selectedCategory === 'all'
+                ? 'bg-[#14452F] text-white shadow-xs'
+                : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+            }`}
+          >
+            All Updates ({newsItems.length})
+          </button>
+          {categories.map((cat) => {
+            const count = newsItems.filter((n) => n.category === cat).length;
+            const isSelected = selectedCategory === cat;
+            return (
+              <button
+                key={cat}
+                type="button"
+                onClick={() => setSelectedCategory(isSelected ? 'all' : cat)}
+                className={`px-3 py-1 rounded-full font-medium transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
+                  isSelected
+                    ? 'bg-[#0B3B69] text-white font-semibold shadow-xs'
+                    : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+                }`}
+              >
+                <span>{cat}</span>
+                <span
+                  className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+                    isSelected ? 'bg-white/20 text-white' : 'bg-stone-200 text-stone-700'
+                  }`}
+                >
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
       </div>
+
+      {/* News Cards Grid */}
+      {filteredNews.length === 0 ? (
+        <div className="rounded-xl border border-stone-200 bg-white p-12 text-center space-y-3">
+          <Newspaper className="h-10 w-10 text-stone-300 mx-auto" />
+          <h3 className="font-serif text-lg font-semibold text-stone-800">
+            No Bulletins Found
+          </h3>
+          <p className="text-xs text-stone-500 max-w-md mx-auto">
+            {searchQuery
+              ? `No announcements match "${searchQuery}". Try clearing your search.`
+              : 'There are currently no active announcements in this category.'}
+          </p>
+          {(searchQuery || selectedCategory !== 'all') && (
+            <button
+              type="button"
+              onClick={() => {
+                setSearchQuery('');
+                setSelectedCategory('all');
+              }}
+              className="rounded-lg bg-[#14452F] px-4 py-2 text-xs font-semibold text-white hover:bg-[#0D3121] transition-colors cursor-pointer"
+            >
+              Clear Filters
+            </button>
+          )}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {filteredNews.map((item) => {
+            const filePath = item.file_path
+              ? item.file_path.startsWith('/')
+                ? item.file_path
+                : `/uploads/resources/${item.file_path}`
+              : null;
+
+            return (
+              <article
+                key={item.id}
+                className="flex w-full flex-col justify-between rounded-xl border border-stone-200 bg-white p-6 space-y-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-stone-300 hover:shadow-md"
+              >
+                <div className="space-y-3">
+                  <div className="flex flex-wrap items-center gap-2 text-xs text-stone-500">
+                    <span className="font-semibold text-[#14452F] bg-[#14452F]/10 px-2 py-0.5 rounded">
+                      {item.category}
+                    </span>
+                    {filePath && (
+                      <span className="font-bold text-red-700 bg-red-100 border border-red-200 px-2 py-0.5 rounded text-[10px] uppercase tracking-wider inline-flex items-center gap-1">
+                        <FileText className="h-3 w-3" />
+                        PDF Attached
+                      </span>
+                    )}
+                    <span aria-hidden="true">·</span>
+                    <span className="inline-flex items-center gap-1">
+                      <Calendar className="h-3.5 w-3.5" />
+                      {item.date}
+                    </span>
+                  </div>
+
+                  <h2 className="font-serif text-xl font-bold text-stone-900 leading-snug">
+                    {item.title}
+                  </h2>
+
+                  <p className="text-sm text-stone-600 leading-relaxed line-clamp-3">
+                    {item.summary}
+                  </p>
+                </div>
+
+                <div className="pt-4 border-t border-stone-100 flex flex-wrap items-center justify-between gap-3 text-xs text-stone-500">
+                  <span className="truncate max-w-[200px] font-medium text-stone-600 flex items-center gap-1">
+                    <MapPin className="h-3.5 w-3.5 text-stone-400 shrink-0" />
+                    <span>{item.venue}</span>
+                  </span>
+
+                  <div className="flex items-center gap-2">
+                    {filePath && (
+                      <a
+                        href={filePath}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 font-semibold text-emerald-800 bg-emerald-50 border border-emerald-300 hover:bg-emerald-100 px-3 py-1.5 rounded-md text-xs transition-colors"
+                        title="Download Attached PDF"
+                      >
+                        <Download className="h-3.5 w-3.5" />
+                        <span>PDF</span>
+                      </a>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => setSelectedNews(item)}
+                      className="font-semibold text-[#0B3B69] hover:underline px-2 py-1.5 cursor-pointer whitespace-nowrap"
+                    >
+                      Read Announcement →
+                    </button>
+                  </div>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      )}
 
       {/* News Detail Modal */}
       <AnimatePresence>
         {selectedNews && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-sm animate-fade-in">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-xs animate-fade-in">
             <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full p-6 sm:p-8 space-y-5 border border-stone-200 max-h-[90vh] overflow-y-auto">
               <div className="flex items-start justify-between gap-4 border-b border-stone-200 pb-4">
                 <div className="space-y-1">
-                  <span className="text-xs font-semibold text-[#14452F] bg-[#14452F]/10 px-2 py-0.5 rounded">
+                  <span className="text-xs font-semibold text-[#14452F] bg-[#14452F]/10 px-2.5 py-0.5 rounded-full">
                     {selectedNews.category}
                   </span>
-                  <h2 className="font-serif text-2xl font-bold text-stone-900 leading-snug">
+                  <h2 className="font-serif text-2xl font-bold text-stone-900 leading-snug pt-1">
                     {selectedNews.title}
                   </h2>
-                  <div className="flex items-center gap-3 text-xs text-stone-500 pt-1">
-                    <span>Date: {selectedNews.date}</span>
+                  <div className="flex flex-wrap items-center gap-3 text-xs text-stone-500 pt-1">
+                    <span className="flex items-center gap-1">
+                      <Calendar className="h-3.5 w-3.5" />
+                      <span>{selectedNews.date}</span>
+                    </span>
                     <span>·</span>
-                    <span>Venue: {selectedNews.venue}</span>
+                    <span className="flex items-center gap-1">
+                      <MapPin className="h-3.5 w-3.5" />
+                      <span>{selectedNews.venue}</span>
+                    </span>
                   </div>
                 </div>
                 <button
                   type="button"
                   onClick={() => setSelectedNews(null)}
-                  className="rounded-lg p-1 text-stone-400 hover:text-stone-700 hover:bg-stone-100 cursor-pointer"
+                  className="rounded-lg p-1.5 text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors cursor-pointer shrink-0"
                 >
                   <X className="h-5 w-5" />
                 </button>
               </div>
 
               <div className="space-y-4 text-sm text-stone-700 leading-relaxed">
-                <p className="font-semibold text-stone-900">{selectedNews.summary}</p>
-                <div className="whitespace-pre-line text-stone-600">
+                <p className="font-semibold text-stone-900 bg-stone-50 p-4 rounded-lg border border-stone-100">
+                  {selectedNews.summary}
+                </p>
+                <div className="whitespace-pre-line text-stone-600 leading-relaxed">
                   {selectedNews.content || selectedNews.summary}
                 </div>
 
                 {selectedNews.file_path && (
-                  <div className="pt-3 border-t border-stone-200">
+                  <div className="pt-4 border-t border-stone-200">
                     <a
-                      href={selectedNews.file_path.startsWith('/') ? selectedNews.file_path : `/uploads/resources/${selectedNews.file_path}`}
+                      href={
+                        selectedNews.file_path.startsWith('/')
+                          ? selectedNews.file_path
+                          : `/uploads/resources/${selectedNews.file_path}`
+                      }
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 rounded-md bg-[#14452F] px-4 py-2 text-xs font-semibold text-white hover:bg-[#0D3121] transition-colors"
+                      className="inline-flex items-center gap-2 rounded-lg bg-[#14452F] px-4 py-2.5 text-xs font-semibold text-white hover:bg-[#0D3121] transition-colors shadow-xs"
                     >
                       <Download className="h-4 w-4" />
                       <span>Download Attached Circular / Document (PDF)</span>
@@ -586,6 +769,9 @@ interface DatabaseModalProps {
 export function DatabaseModal({ database, onClose }: DatabaseModalProps) {
   const [copiedUser, setCopiedUser] = useState(false);
   const [copiedPass, setCopiedPass] = useState(false);
+  // Default masked (hidden) — user clicks eye to reveal
+  const [showUser, setShowUser] = useState(false);
+  const [showPass, setShowPass] = useState(false);
 
   const copyToClipboard = (text: string, type: 'user' | 'pass') => {
     navigator.clipboard.writeText(text);
@@ -653,32 +839,56 @@ export function DatabaseModal({ database, onClose }: DatabaseModalProps) {
                   {database.username && (
                     <div className="bg-white p-2.5 rounded border border-amber-200 shadow-xs">
                       <span className="text-[10px] uppercase font-bold text-stone-500 block">Username</span>
-                      <div className="flex items-center justify-between mt-1">
-                        <code className="font-mono font-bold text-stone-900 text-sm select-all">{database.username}</code>
-                        <button
-                          type="button"
-                          onClick={() => copyToClipboard(database.username!, 'user')}
-                          className="p-1 hover:bg-stone-100 rounded text-stone-600 transition-colors cursor-pointer"
-                          title="Copy Username"
-                        >
-                          {copiedUser ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
-                        </button>
+                      <div className="flex items-center justify-between mt-1 gap-1">
+                        <code className="font-mono font-bold text-stone-900 text-sm select-all flex-1 overflow-hidden">
+                          {showUser ? database.username : '•'.repeat(Math.min(database.username.length, 12))}
+                        </code>
+                        <div className="flex items-center gap-0.5 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => setShowUser((v) => !v)}
+                            className="p-1 hover:bg-stone-100 rounded text-stone-500 transition-colors cursor-pointer"
+                            title={showUser ? 'Hide Username' : 'Show Username'}
+                          >
+                            {showUser ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => copyToClipboard(database.username!, 'user')}
+                            className="p-1 hover:bg-stone-100 rounded text-stone-600 transition-colors cursor-pointer"
+                            title="Copy Username"
+                          >
+                            {copiedUser ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
+                          </button>
+                        </div>
                       </div>
                     </div>
                   )}
                   {database.password && (
                     <div className="bg-white p-2.5 rounded border border-amber-200 shadow-xs">
                       <span className="text-[10px] uppercase font-bold text-stone-500 block">Password</span>
-                      <div className="flex items-center justify-between mt-1">
-                        <code className="font-mono font-bold text-stone-900 text-sm select-all">{database.password}</code>
-                        <button
-                          type="button"
-                          onClick={() => copyToClipboard(database.password!, 'pass')}
-                          className="p-1 hover:bg-stone-100 rounded text-stone-600 transition-colors cursor-pointer"
-                          title="Copy Password"
-                        >
-                          {copiedPass ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
-                        </button>
+                      <div className="flex items-center justify-between mt-1 gap-1">
+                        <code className="font-mono font-bold text-stone-900 text-sm select-all flex-1 overflow-hidden">
+                          {showPass ? database.password : '•'.repeat(Math.min(database.password.length, 12))}
+                        </code>
+                        <div className="flex items-center gap-0.5 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => setShowPass((v) => !v)}
+                            className="p-1 hover:bg-stone-100 rounded text-stone-500 transition-colors cursor-pointer"
+                            title={showPass ? 'Hide Password' : 'Show Password'}
+                          >
+                            {showPass ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => copyToClipboard(database.password!, 'pass')}
+                            className="p-1 hover:bg-stone-100 rounded text-stone-600 transition-colors cursor-pointer"
+                            title="Copy Password"
+                          >
+                            {copiedPass ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
+                          </button>
+                        </div>
                       </div>
                     </div>
                   )}

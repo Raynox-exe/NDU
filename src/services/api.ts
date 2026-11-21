@@ -264,7 +264,20 @@ export const api = {
 
     async getNews(): Promise<{ success: boolean; news: DynamicNews[] }> {
       const res = await fetch(`${API_BASE}/api/public/news`);
-      return res.json();
+      const data = await res.json();
+      if (data && data.success && Array.isArray(data.news)) {
+        return {
+          ...data,
+          news: data.news.map((n: any) => ({
+            ...n,
+            date: n.date || n.date_tag || 'Current Notice',
+            content: n.content || n.full_content || n.summary || '',
+            file_path: n.file_path || n.pdf_path || null,
+            is_active: n.is_active !== undefined ? Boolean(n.is_active) : true,
+          })),
+        };
+      }
+      return data;
     },
 
     async getJournalOverrides(): Promise<{ success: boolean; overrides: Record<string, { is_active?: boolean }> }> {
@@ -450,7 +463,20 @@ export const api = {
     // Dynamic News
     async getNews(): Promise<{ success: boolean; news: DynamicNews[] }> {
       const res = await fetch(`${API_BASE}/api/admin/news`, { headers: getAuthHeaders() });
-      return res.json();
+      const data = await res.json();
+      if (data && data.success && Array.isArray(data.news)) {
+        return {
+          ...data,
+          news: data.news.map((n: any) => ({
+            ...n,
+            date: n.date || n.date_tag || 'Current Notice',
+            content: n.content || n.full_content || n.summary || '',
+            file_path: n.file_path || n.pdf_path || null,
+            is_active: n.is_active !== undefined ? Boolean(n.is_active) : true,
+          })),
+        };
+      }
+      return data;
     },
 
     async createNews(data: Partial<DynamicNews>) {
