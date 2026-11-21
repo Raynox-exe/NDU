@@ -207,26 +207,26 @@ export function FacultyLibraryView({
 
       {/* Hero Section */}
       <section className="bg-gradient-to-b from-[#14452F] to-[#0D3121] text-white py-12 sm:py-16">
-        <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-10">
-          <div className="max-w-4xl space-y-4">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-white text-xs font-semibold backdrop-blur-xs">
+        <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-10 flex flex-col items-center">
+          <div className="max-w-4xl w-full text-center flex flex-col items-center space-y-4">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/10 text-white text-xs font-semibold backdrop-blur-xs mx-auto">
               <Building2 className="h-3.5 w-3.5 text-amber-300" />
               <span>NDU Campus Faculty Library</span>
               <span className="text-white/40">·</span>
               <span className="text-amber-300 font-mono text-[11px]">{library.location}</span>
             </div>
 
-            <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-white leading-tight">
+            <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-white leading-tight text-center">
               {library.name}
             </h1>
 
-            <p className="text-sm sm:text-base text-stone-200 leading-relaxed max-w-2xl">
+            <p className="text-sm sm:text-base text-stone-200 leading-relaxed max-w-2xl text-center mx-auto">
               {library.focus}
             </p>
 
-            {/* Quick Metadata Stats Strip */}
-            <div className="pt-4 grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-              <div className="rounded-lg bg-white/10 p-3 sm:p-4 backdrop-blur-xs">
+            {/* Quick Metadata Stats Strip - Centered */}
+            <div className="pt-4 grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 w-full max-w-3xl mx-auto">
+              <div className="rounded-lg bg-white/10 p-3 sm:p-4 backdrop-blur-xs text-center flex flex-col items-center justify-center">
                 <div className="text-[11px] uppercase tracking-wider text-stone-300 font-medium">
                   Departments
                 </div>
@@ -235,7 +235,7 @@ export function FacultyLibraryView({
                 </div>
               </div>
 
-              <div className="rounded-lg bg-white/10 p-3 sm:p-4 backdrop-blur-xs">
+              <div className="rounded-lg bg-white/10 p-3 sm:p-4 backdrop-blur-xs text-center flex flex-col items-center justify-center">
                 <div className="text-[11px] uppercase tracking-wider text-stone-300 font-medium">
                   Total Journals
                 </div>
@@ -244,22 +244,22 @@ export function FacultyLibraryView({
                 </div>
               </div>
 
-              <div className="rounded-lg bg-white/10 p-3 sm:p-4 backdrop-blur-xs">
+              <div className="rounded-lg bg-white/10 p-3 sm:p-4 backdrop-blur-xs text-center flex flex-col items-center justify-center">
                 <div className="text-[11px] uppercase tracking-wider text-stone-300 font-medium">
                   Access Status
                 </div>
-                <div className="text-xs sm:text-sm font-semibold text-emerald-300 mt-1.5 flex items-center gap-1.5">
-                  <CheckCircle2 className="h-4 w-4" />
+                <div className="text-xs sm:text-sm font-semibold text-emerald-300 mt-1.5 flex items-center justify-center gap-1.5">
+                  <CheckCircle2 className="h-4 w-4 shrink-0" />
                   <span>Open Access 24/7</span>
                 </div>
               </div>
 
-              <div className="rounded-lg bg-white/10 p-3 sm:p-4 backdrop-blur-xs">
+              <div className="rounded-lg bg-white/10 p-3 sm:p-4 backdrop-blur-xs text-center flex flex-col items-center justify-center">
                 <div className="text-[11px] uppercase tracking-wider text-stone-300 font-medium">
                   Physical Hours
                 </div>
-                <div className="text-xs sm:text-sm font-semibold text-stone-100 mt-1.5 flex items-center gap-1.5">
-                  <Clock className="h-4 w-4 text-stone-300" />
+                <div className="text-xs sm:text-sm font-semibold text-stone-100 mt-1.5 flex items-center justify-center gap-1.5">
+                  <Clock className="h-4 w-4 text-stone-300 shrink-0" />
                   <span>Mon – Fri, 8am – 4pm</span>
                 </div>
               </div>

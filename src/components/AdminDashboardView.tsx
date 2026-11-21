@@ -117,6 +117,13 @@ export function AdminDashboardView({ user, onLogout, onNavigateHome }: AdminDash
   const [newsContent, setNewsContent] = useState('');
   const [newsFile, setNewsFile] = useState<File | null>(null);
 
+  // News consortium accordions
+  const [newsFilterCategory, setNewsFilterCategory] = useState<string>('all');
+  const [newsSearchQuery, setNewsSearchQuery] = useState('');
+  const [expandedNewsCategories, setExpandedNewsCategories] = useState<Set<string>>(
+    new Set(['Library Announcements', 'Digital Library Notice', 'ZOOM Conferences & Seminars', 'Scholarly Publishing']),
+  );
+
   // Search filter and consortium accordions for links
   const [linkFilterSection, setLinkFilterSection] = useState<string>('all');
   const [linkSearchQuery, setLinkSearchQuery] = useState('');
@@ -544,6 +551,25 @@ export function AdminDashboardView({ user, onLogout, onNavigateHome }: AdminDash
     }
   };
 
+  const toggleNewsCategoryAccordion = (cat: string) => {
+    setExpandedNewsCategories((prev) => {
+      const next = new Set(prev);
+      if (next.has(cat)) next.delete(cat);
+      else next.add(cat);
+      return next;
+    });
+  };
+
+  const handleExpandAllNewsCategories = () => {
+    const allCats = new Set<string>();
+    news.forEach((n) => allCats.add(n.category || 'Library Announcements'));
+    setExpandedNewsCategories(allCats);
+  };
+
+  const handleCollapseAllNewsCategories = () => {
+    setExpandedNewsCategories(new Set());
+  };
+
   // E-Journal Catalog handlers
   const handleToggleJournalOverride = async (journalId: string, currentlyActive: boolean) => {
     const newActive = !currentlyActive;
@@ -766,6 +792,21 @@ export function AdminDashboardView({ user, onLogout, onNavigateHome }: AdminDash
   const readyToPublishSubmissions = submissions.filter(
     (s) => s.status === 'accepted' && !articles.some((a) => a.submission_id === s.id)
   );
+
+  // News categories derived dynamically
+  const newsCategories = React.useMemo(() => {
+    const cats = new Set<string>();
+    news.forEach((n) => {
+      if (n.category) cats.add(n.category);
+    });
+    [
+      'Library Announcements',
+      'Digital Library Notice',
+      'ZOOM Conferences & Seminars',
+      'Scholarly Publishing',
+    ].forEach((c) => cats.add(c));
+    return Array.from(cats);
+  }, [news]);
 
   // Nav items config
   const navItems = [
@@ -1789,113 +1830,321 @@ export function AdminDashboardView({ user, onLogout, onNavigateHome }: AdminDash
       {/* TAB 6: DYNAMIC NEWS & BULLETINS */}
       {/* ==================================================== */}
       {activeTab === 'news' && (
-        <div className="rounded-xl border border-stone-200 bg-white overflow-hidden shadow-sm space-y-4 p-6">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-stone-200 pb-4">
-            <div>
-              <h2 className="font-serif text-xl font-bold text-stone-900">
-                Library News, Bulletins &amp; Announcements
-              </h2>
-              <p className="text-xs text-stone-500">
-                Publish new circulars and events, update existing content, or toggle visibility.
-              </p>
+        <div className="space-y-6">
+          <div className="rounded-xl border border-stone-200 bg-white p-6 shadow-sm space-y-5">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-stone-200 pb-4">
+              <div>
+                <h2 className="font-sans text-xl font-bold text-stone-900">
+                  News, Bulletins &amp; Announcements Consortium Control
+                </h2>
+                <p className="text-xs text-stone-500">
+                  Announcements, circulars, and bulletins separated into editable consortium dropdowns by category. Each section can be expanded to edit content, toggle live visibility, or publish new notices.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingNews(null);
+                    setNewsCategory('Library Announcements');
+                    setNewsTitle('');
+                    setNewsSummary('');
+                    setNewsContent('');
+                    setNewsVenue('Niger Delta University');
+                    setNewsDate('Academic Session 2026');
+                    setNewsFile(null);
+                    setShowNewsModal(true);
+                  }}
+                  className="flex items-center gap-1.5 rounded-md bg-[#14452F] px-4 py-2 text-xs font-semibold text-white hover:bg-[#0D3121] cursor-pointer shadow-xs"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span>+ Post News Announcement</span>
+                </button>
+              </div>
             </div>
-            <button
-              type="button"
-              onClick={() => {
-                setEditingNews(null);
-                setNewsTitle('');
-                setNewsSummary('');
-                setNewsContent('');
-                setShowNewsModal(true);
-              }}
-              className="flex items-center gap-1.5 rounded-md bg-[#14452F] px-4 py-2 text-xs font-semibold text-white hover:bg-[#0D3121] cursor-pointer"
-            >
-              <Plus className="h-4 w-4" />
-              <span>+ Post News Announcement</span>
-            </button>
-          </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="border-b border-stone-200 bg-stone-50 text-stone-600 font-semibold uppercase tracking-wider">
-                  <th className="py-3 px-4">Headline &amp; Venue</th>
-                  <th className="py-3 px-4">Category</th>
-                  <th className="py-3 px-4">Date</th>
-                  <th className="py-3 px-4">Visibility on Website</th>
-                  <th className="py-3 px-4">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-stone-100">
-                {news.map((item) => (
-                  <tr key={item.id} className="hover:bg-stone-50/60">
-                    <td className="py-4 px-4 max-w-sm">
-                      <div className="font-semibold text-stone-900 flex items-center gap-1.5 flex-wrap">
-                        <span>{item.title}</span>
-                        {item.file_path && (
-                          <a
-                            href={item.file_path.startsWith('/') ? item.file_path : `/uploads/resources/${item.file_path}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-[10px] bg-red-100 text-red-800 font-bold px-1.5 py-0.5 rounded inline-flex items-center gap-1 hover:bg-red-200"
-                            title="View / Download Attached PDF"
+            {/* Filter, Search & Accordion Controls */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-stone-50 p-3 rounded-lg border border-stone-200">
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <span className="text-xs font-semibold text-stone-600 whitespace-nowrap">
+                  Filter Category:
+                </span>
+                <select
+                  value={newsFilterCategory}
+                  onChange={(e) => setNewsFilterCategory(e.target.value)}
+                  className="rounded border border-stone-300 bg-white px-3 py-1.5 text-xs text-stone-900 outline-none cursor-pointer"
+                >
+                  <option value="all">All Categories ({newsCategories.length})</option>
+                  {newsCategories.map((c) => (
+                    <option key={c} value={c}>
+                      {c} ({news.filter((n) => (n.category || 'Library Announcements') === c).length})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="relative flex-1 max-w-md">
+                <Search className="absolute left-2.5 top-2 h-3.5 w-3.5 text-stone-400" />
+                <input
+                  type="text"
+                  placeholder="Search announcements by headline, venue, or content..."
+                  value={newsSearchQuery}
+                  onChange={(e) => setNewsSearchQuery(e.target.value)}
+                  className="w-full rounded border border-stone-300 bg-white pl-8 pr-3 py-1.5 text-xs text-stone-900 outline-none focus:border-[#14452F]"
+                />
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={handleExpandAllNewsCategories}
+                  className="rounded border border-stone-300 bg-white px-3 py-1.5 text-xs font-medium text-stone-700 hover:bg-stone-100 cursor-pointer"
+                >
+                  Expand All
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCollapseAllNewsCategories}
+                  className="rounded border border-stone-300 bg-white px-3 py-1.5 text-xs font-medium text-stone-700 hover:bg-stone-100 cursor-pointer"
+                >
+                  Collapse All
+                </button>
+              </div>
+            </div>
+
+            {/* Consortium Dropdowns for each News Category */}
+            <div className="space-y-4">
+              {newsCategories
+                .filter((cat) => newsFilterCategory === 'all' || cat === newsFilterCategory)
+                .map((category) => {
+                  const catItems = news.filter(
+                    (n) => (n.category || 'Library Announcements') === category
+                  );
+                  const isSearching = Boolean(newsSearchQuery.trim());
+                  const query = newsSearchQuery.toLowerCase().trim();
+
+                  const filteredItems = catItems.filter((n) => {
+                    if (!isSearching) return true;
+                    return (
+                      n.title.toLowerCase().includes(query) ||
+                      (n.summary && n.summary.toLowerCase().includes(query)) ||
+                      (n.venue && n.venue.toLowerCase().includes(query)) ||
+                      (n.content && n.content.toLowerCase().includes(query))
+                    );
+                  });
+
+                  if (isSearching && filteredItems.length === 0 && !category.toLowerCase().includes(query)) {
+                    return null;
+                  }
+
+                  const isExpanded = isSearching || expandedNewsCategories.has(category);
+
+                  return (
+                    <div
+                      key={category}
+                      className="rounded-xl border border-stone-200 overflow-hidden shadow-xs bg-white transition-all"
+                    >
+                      {/* Category Consortium Dropdown Header */}
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-stone-50/90 border-b border-stone-200 gap-3">
+                        <button
+                          type="button"
+                          onClick={() => toggleNewsCategoryAccordion(category)}
+                          className="flex items-center gap-3 text-left flex-1 cursor-pointer"
+                        >
+                          <span className="p-1 rounded bg-[#0B3B69]/10 text-[#0B3B69]">
+                            {isExpanded ? (
+                              <ChevronDown className="h-4 w-4" />
+                            ) : (
+                              <ChevronRight className="h-4 w-4" />
+                            )}
+                          </span>
+                          <Newspaper className="h-4 w-4 text-[#0B3B69] shrink-0" />
+                          <div>
+                            <h3 className="font-sans font-bold text-sm text-stone-900">
+                              {category}
+                            </h3>
+                            <p className="text-[11px] text-stone-500 font-normal">
+                              Institutional circulars, notices &amp; updates
+                            </p>
+                          </div>
+                        </button>
+
+                        <div className="flex items-center gap-3 pl-8 sm:pl-0">
+                          <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-800">
+                            {filteredItems.length} notice{filteredItems.length !== 1 ? 's' : ''}
+                          </span>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingNews(null);
+                              setNewsCategory(category);
+                              setNewsTitle('');
+                              setNewsSummary('');
+                              setNewsContent('');
+                              setNewsVenue('Niger Delta University');
+                              setNewsDate('Academic Session 2026');
+                              setNewsFile(null);
+                              setShowNewsModal(true);
+                            }}
+                            className="inline-flex items-center gap-1 rounded bg-[#14452F] hover:bg-[#0D3121] px-2.5 py-1 text-xs font-semibold text-white cursor-pointer shadow-xs"
                           >
-                            <Download className="h-3 w-3" />
-                            PDF
-                          </a>
-                        )}
+                            <Plus className="h-3 w-3" />
+                            <span>Post Notice</span>
+                          </button>
+                        </div>
                       </div>
-                      <div className="text-[11px] text-stone-500 font-normal">Venue: {item.venue}</div>
-                      <div className="text-[11px] text-stone-400 line-clamp-1">{item.summary}</div>
-                    </td>
-                    <td className="py-4 px-4 text-stone-600">{item.category}</td>
-                    <td className="py-4 px-4 text-stone-500 whitespace-nowrap">{item.date}</td>
 
-                    {/* Disable / Enable Toggle */}
-                    <td className="py-4 px-4 whitespace-nowrap">
-                      <button
-                        type="button"
-                        onClick={() => handleToggleNewsActive(item)}
-                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold cursor-pointer transition-colors ${
-                          item.is_active
-                            ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
-                            : 'bg-red-100 text-red-800 hover:bg-red-200'
-                        }`}
-                      >
-                        {item.is_active ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
-                        <span>{item.is_active ? 'Live' : 'Hidden'}</span>
-                      </button>
-                    </td>
+                      {/* Category Table Content */}
+                      {isExpanded && (
+                        <div>
+                          {filteredItems.length === 0 ? (
+                            <div className="p-6 text-center text-xs text-stone-500 bg-stone-50/40">
+                              No notices found in this category{isSearching ? ' matching your search' : ''}.
+                            </div>
+                          ) : (
+                            <div className="overflow-x-auto">
+                              <table className="w-full text-left text-xs border-collapse">
+                                <thead>
+                                  <tr className="border-b border-stone-200 bg-stone-50/70 text-stone-600 font-semibold uppercase tracking-wider">
+                                    <th className="py-2.5 px-4">Headline, Venue &amp; Summary</th>
+                                    <th className="py-2.5 px-4">Date / Session</th>
+                                    <th className="py-2.5 px-4">Live Status</th>
+                                    <th className="py-2.5 px-4 text-right sm:text-left">Actions</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-stone-100">
+                                  {filteredItems.map((item) => (
+                                    <tr
+                                      key={item.id}
+                                      className={`transition-colors ${
+                                        item.is_active ? 'hover:bg-stone-50/70' : 'bg-red-50/30 text-stone-400'
+                                      }`}
+                                    >
+                                      <td className="py-3 px-4 max-w-sm">
+                                        <div className="font-semibold text-stone-900 flex items-center gap-1.5 flex-wrap">
+                                          <span>{item.title}</span>
+                                          {item.file_path && (
+                                            <a
+                                              href={
+                                                item.file_path.startsWith('/')
+                                                  ? item.file_path
+                                                  : `/uploads/resources/${item.file_path}`
+                                              }
+                                              target="_blank"
+                                              rel="noopener noreferrer"
+                                              className="text-[10px] bg-red-100 text-red-800 font-bold px-1.5 py-0.5 rounded inline-flex items-center gap-1 hover:bg-red-200"
+                                              title="View / Download Attached PDF"
+                                            >
+                                              <Download className="h-3 w-3" />
+                                              PDF
+                                            </a>
+                                          )}
+                                        </div>
+                                        <div className="text-[11px] text-stone-500 font-normal">
+                                          Venue: {item.venue}
+                                        </div>
+                                        <div className="text-[11px] text-stone-400 line-clamp-1">
+                                          {item.summary}
+                                        </div>
+                                      </td>
 
-                    <td className="py-4 px-4 whitespace-nowrap space-x-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setEditingNews(item);
-                          setNewsTitle(item.title);
-                          setNewsCategory(item.category);
-                          setNewsDate(item.date);
-                          setNewsVenue(item.venue);
-                          setNewsSummary(item.summary);
-                          setNewsContent(item.content);
-                          setShowNewsModal(true);
-                        }}
-                        className="rounded bg-[#0B3B69] px-2.5 py-1 text-xs font-semibold text-white hover:bg-[#082847] cursor-pointer"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteNews(item.id)}
-                        className="p-1 text-stone-400 hover:text-red-600 cursor-pointer"
-                      >
-                        <Trash2 className="h-4 w-4 inline" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                                      <td className="py-3 px-4 text-stone-600 whitespace-nowrap">
+                                        {item.date}
+                                      </td>
+
+                                      {/* Disable / Enable Toggle */}
+                                      <td className="py-3 px-4 whitespace-nowrap">
+                                        <button
+                                          type="button"
+                                          onClick={() => handleToggleNewsActive(item)}
+                                          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold cursor-pointer transition-colors ${
+                                            item.is_active
+                                              ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
+                                              : 'bg-red-100 text-red-800 hover:bg-red-200'
+                                          }`}
+                                        >
+                                          {item.is_active ? (
+                                            <>
+                                              <Eye className="h-3.5 w-3.5" />
+                                              <span>Live</span>
+                                            </>
+                                          ) : (
+                                            <>
+                                              <EyeOff className="h-3.5 w-3.5" />
+                                              <span>Hidden</span>
+                                            </>
+                                          )}
+                                        </button>
+                                      </td>
+
+                                      {/* Update & Actions */}
+                                      <td className="py-3 px-4 whitespace-nowrap space-x-2">
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            setEditingNews(item);
+                                            setNewsTitle(item.title);
+                                            setNewsCategory(item.category);
+                                            setNewsDate(item.date);
+                                            setNewsVenue(item.venue);
+                                            setNewsSummary(item.summary);
+                                            setNewsContent(item.content);
+                                            setShowNewsModal(true);
+                                          }}
+                                          className="inline-flex items-center gap-1 rounded bg-[#0B3B69] px-2.5 py-1 text-xs font-semibold text-white hover:bg-[#082847] cursor-pointer"
+                                        >
+                                          <Edit2 className="h-3 w-3" />
+                                          <span>Edit</span>
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleDeleteNews(item.id)}
+                                          className="p-1 text-stone-400 hover:text-red-600 cursor-pointer"
+                                          title="Delete Announcement"
+                                        >
+                                          <Trash2 className="h-4 w-4 inline" />
+                                        </button>
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          )}
+
+                          {/* + Post Notice Module at the bottom of the category */}
+                          <div className="bg-stone-50/70 border-t border-stone-200 px-4 py-2.5 flex items-center justify-between">
+                            <span className="text-xs text-stone-500">
+                              Post a new bulletin or event notice under{' '}
+                              <strong className="text-stone-700">{category}</strong>
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditingNews(null);
+                                setNewsCategory(category);
+                                setNewsTitle('');
+                                setNewsSummary('');
+                                setNewsContent('');
+                                setNewsVenue('Niger Delta University');
+                                setNewsDate('Academic Session 2026');
+                                setNewsFile(null);
+                                setShowNewsModal(true);
+                              }}
+                              className="inline-flex items-center gap-1 rounded bg-[#14452F] hover:bg-[#0D3121] px-3 py-1 text-xs font-semibold text-white cursor-pointer shadow-xs"
+                            >
+                              <Plus className="h-3 w-3" />
+                              <span>Post to {category}</span>
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+            </div>
           </div>
         </div>
       )}
