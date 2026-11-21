@@ -24,7 +24,8 @@ const pool = mysql.createPool({
 
 // ── Helpers ───────────────────────────────────────────────────
 async function q(sql, params = []) {
-  const [rows] = await pool.execute(sql, params);
+  const safeParams = params.map((p) => (p === undefined ? null : p));
+  const [rows] = await pool.execute(sql, safeParams);
   return rows;
 }
 function one(rows) { return rows[0] ?? null; }
@@ -188,14 +189,21 @@ export const submissions = {
     return this.getByUserId(userId);
   },
   async create(data) {
-    const {
-      id = `sub-${Date.now()}`, user_id = null, title, authors, abstract = null,
-      keywords = null, affiliation = null, email, file_path = null, status = 'pending',
-    } = data;
+    const id = data.id || `sub-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
+    const userId = data.user_id ?? null;
+    const title = data.title;
+    const authors = data.authors || data.author_name || 'Unknown Author';
+    const abstract = data.abstract ?? null;
+    const keywords = data.keywords ? (Array.isArray(data.keywords) ? data.keywords.join(', ') : String(data.keywords)) : null;
+    const affiliation = data.affiliation || data.author_institute || null;
+    const email = data.email || data.author_email || 'researcher@ndu.edu.ng';
+    const filePath = data.file_path || data.filePath || null;
+    const status = data.status || 'pending';
+
     await q(
       `INSERT INTO submissions (id, user_id, title, authors, abstract, keywords, affiliation, email, file_path, status)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [id, user_id, title, authors, abstract, keywords, affiliation, email, file_path, status]
+      [id, userId, title, authors, abstract, keywords, affiliation, email, filePath, status]
     );
     return this.findById(id);
   },
@@ -321,14 +329,20 @@ export const news = {
     return one(await q('SELECT * FROM news WHERE id = ? LIMIT 1', [id]));
   },
   async create(data) {
-    const {
-      id = `news-${Date.now()}`, title, category = null, date_tag = null, venue = null,
-      summary = null, full_content = null, pdf_path = null, is_active = true,
-    } = data;
+    const id = data.id || `news-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
+    const title = data.title;
+    const category = data.category || 'Bulletins & Circulars';
+    const dateTag = data.date_tag || data.date || 'Current Announcement';
+    const venue = data.venue || 'Niger Delta University';
+    const summary = data.summary ?? null;
+    const fullContent = data.full_content || data.content || '';
+    const pdfPath = data.pdf_path || data.file_path || null;
+    const isActive = data.is_active !== undefined ? bool(data.is_active) : 1;
+
     await q(
       `INSERT INTO news (id, title, category, date_tag, venue, summary, full_content, pdf_path, is_active)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [id, title, category, date_tag, venue, summary, full_content, pdf_path, bool(is_active)]
+      [id, title, category, dateTag, venue, summary, fullContent, pdfPath, isActive]
     );
     return this.findById(id);
   },

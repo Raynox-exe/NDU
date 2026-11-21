@@ -20,6 +20,8 @@
  * ─────────────────────────────────────────────────────────────
  */
 
+import 'dotenv/config';
+
 let db;
 
 if (process.env.DB_HOST) {

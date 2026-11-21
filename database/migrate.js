@@ -31,7 +31,7 @@ const DB_CONFIG = {
 };
 
 function fmt(val) {
-  return val ?? null;
+  return (val === undefined || val === null) ? null : val;
 }
 
 async function main() {
@@ -135,15 +135,20 @@ async function main() {
     // Submissions
     console.log(`📝  Migrating ${data.submissions?.length ?? 0} submissions...`);
     for (const s of data.submissions ?? []) {
+      const authorName = s.author_name || s.authors || 'Unknown Author';
+      const authorEmail = s.author_email || s.email || 'researcher@ndu.edu.ng';
+      const affiliation = s.author_institute || s.affiliation || null;
+      const keywords = Array.isArray(s.keywords) ? s.keywords.join(', ') : (s.keywords || null);
+
       await pool.execute(
         `INSERT IGNORE INTO submissions
            (id, user_id, title, authors, abstract, keywords, affiliation,
             email, file_path, status, submitted_at)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
-          s.id, fmt(s.user_id), s.title, s.authors, fmt(s.abstract),
-          fmt(s.keywords), fmt(s.affiliation), s.email, fmt(s.file_path),
-          s.status ?? 'pending', s.submitted_at,
+          s.id, fmt(s.user_id), s.title, authorName, fmt(s.abstract),
+          fmt(keywords), fmt(affiliation), authorEmail, fmt(s.file_path),
+          s.status ?? 'pending', s.submitted_at || new Date().toISOString(),
         ]
       );
     }
@@ -161,13 +166,21 @@ async function main() {
     // Links
     console.log(`🔗  Migrating ${data.links?.length ?? 0} links...`);
     for (const l of data.links ?? []) {
+      const label = l.label || l.name || 'Untitled Link';
+      const url = l.url || '';
       await pool.execute(
         `INSERT IGNORE INTO links (id, section_id, label, url, description, icon, sort_order, is_active, updated_at)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
-          l.id, fmt(l.section_id), l.label, l.url, fmt(l.description),
-          fmt(l.icon), l.order ?? 0, l.is_active ? 1 : 0,
-          l.updated_at ?? new Date().toISOString(),
+          l.id,
+          fmt(l.section_id),
+          label,
+          url,
+          fmt(l.description),
+          fmt(l.icon),
+          l.order ?? 0,
+          l.is_active ? 1 : 0,
+          l.updated_at || new Date().toISOString(),
         ]
       );
     }
@@ -175,14 +188,18 @@ async function main() {
     // News
     console.log(`📰  Migrating ${data.news?.length ?? 0} news items...`);
     for (const n of data.news ?? []) {
+      const dateTag = n.date_tag || n.date || 'Current Announcement';
+      const fullContent = n.full_content || n.content || '';
+      const pdfPath = n.pdf_path || n.file_path || null;
+
       await pool.execute(
         `INSERT IGNORE INTO news
            (id, title, category, date_tag, venue, summary, full_content, pdf_path, is_active, created_at)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
-          n.id, n.title, fmt(n.category), fmt(n.date_tag), fmt(n.venue),
-          fmt(n.summary), fmt(n.full_content), fmt(n.pdf_path),
-          n.is_active ? 1 : 0, n.created_at,
+          n.id, n.title, fmt(n.category), fmt(dateTag), fmt(n.venue),
+          fmt(n.summary), fmt(fullContent), fmt(pdfPath),
+          n.is_active ? 1 : 0, n.created_at || new Date().toISOString(),
         ]
       );
     }
