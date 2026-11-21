@@ -769,8 +769,15 @@ export function AdminDashboardView({ user, onLogout, onNavigateHome }: AdminDash
                 </tr>
               </thead>
               <tbody className="divide-y divide-stone-100">
-                {submissions.map((sub) => (
-                  <tr key={sub.id} className="hover:bg-stone-50/60 transition-colors">
+                {submissions.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="py-8 text-center text-stone-400">
+                      No manuscripts in queue.
+                    </td>
+                  </tr>
+                ) : (
+                  submissions.map((sub) => (
+                    <tr key={sub.id} className="hover:bg-stone-50/60 transition-colors">
                     <td className="py-4 px-4 font-semibold text-stone-900">
                       <div>{sub.author_name}</div>
                       <div className="text-[11px] text-stone-500 font-normal">{sub.author_institute}</div>
@@ -835,7 +842,7 @@ export function AdminDashboardView({ user, onLogout, onNavigateHome }: AdminDash
                       )}
                     </td>
                   </tr>
-                ))}
+                )))}
               </tbody>
             </table>
           </div>
