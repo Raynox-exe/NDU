@@ -176,15 +176,16 @@ export function MemberDashboardView({ user, onLogout, onNavigateHome }: MemberDa
             <button
               type="button"
               onClick={() => setSidebarOpen((v) => !v)}
-              className="p-1.5 rounded hover:bg-white/10 transition-colors cursor-pointer"
+              className="p-1.5 rounded hover:bg-white/10 transition-colors cursor-pointer text-white"
               aria-label="Toggle sidebar"
+              title="Toggle sidebar navigation"
             >
-              {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              <Menu className="h-5 w-5" />
             </button>
-            <div className="flex items-center gap-2">
-              <UserCheck className="h-5 w-5 text-emerald-300" />
-              <span className="font-serif font-bold text-sm sm:text-base tracking-tight leading-tight">
-                NDU Library <span className="text-emerald-300 font-normal">· Researcher Portal</span>
+            <div className="flex items-center gap-2.5">
+              <UserCheck className="h-5 w-5 text-emerald-400" />
+              <span className="font-sans font-bold text-base sm:text-lg tracking-tight text-white leading-tight">
+                Researcher Dashboard
               </span>
             </div>
           </div>

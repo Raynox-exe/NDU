@@ -184,7 +184,7 @@ export function HeaderNav({
             className="flex items-center gap-3 text-left whitespace-nowrap shrink-0 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0B3B69]"
           >
             <NduCrest className="h-10 w-auto shrink-0" />
-            <span className="font-serif text-lg font-bold tracking-tight text-[#14452F] whitespace-nowrap shrink-0">
+            <span className="font-sans text-xl font-bold tracking-tight text-[#14452F] whitespace-nowrap shrink-0">
               NDU Library
             </span>
           </button>

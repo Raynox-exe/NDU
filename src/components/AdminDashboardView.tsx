@@ -534,15 +534,16 @@ export function AdminDashboardView({ user, onLogout, onNavigateHome }: AdminDash
             <button
               type="button"
               onClick={() => setSidebarOpen((v) => !v)}
-              className="p-1.5 rounded hover:bg-white/10 transition-colors cursor-pointer"
+              className="p-1.5 rounded hover:bg-white/10 transition-colors cursor-pointer text-white"
               aria-label="Toggle sidebar"
+              title="Toggle sidebar navigation"
             >
-              {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              <Menu className="h-5 w-5" />
             </button>
-            <div className="flex items-center gap-2">
-              <ShieldCheck className="h-5 w-5 text-emerald-300" />
-              <span className="font-serif font-bold text-sm sm:text-base tracking-tight leading-tight">
-                NDU Library <span className="text-emerald-300 font-normal">· Admin Console</span>
+            <div className="flex items-center gap-2.5">
+              <ShieldCheck className="h-5 w-5 text-emerald-400" />
+              <span className="font-sans font-bold text-base sm:text-lg tracking-tight text-white leading-tight">
+                Admin Dashboard
               </span>
             </div>
           </div>
@@ -626,35 +627,6 @@ export function AdminDashboardView({ user, onLogout, onNavigateHome }: AdminDash
             })}
           </nav>
 
-          {/* Sidebar footer */}
-          <div className="px-4 py-4 border-t border-white/10 space-y-1.5">
-            <button
-              type="button"
-              onClick={loadAllData}
-              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium text-white/70 hover:bg-white/10 hover:text-white transition-colors cursor-pointer"
-            >
-              <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
-              Refresh All Data
-            </button>
-            {onNavigateHome && (
-              <button
-                type="button"
-                onClick={onNavigateHome}
-                className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium text-white/70 hover:bg-white/10 hover:text-white transition-colors cursor-pointer"
-              >
-                <Home className="h-3.5 w-3.5" />
-                Return to Public Library
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={onLogout}
-              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium text-red-300 hover:bg-red-900/40 hover:text-red-200 transition-colors cursor-pointer"
-            >
-              <LogOut className="h-3.5 w-3.5" />
-              Sign Out
-            </button>
-          </div>
         </aside>
 
 
