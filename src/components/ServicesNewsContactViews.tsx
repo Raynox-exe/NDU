@@ -775,6 +775,7 @@ export function ContactView() {
                       <option>Schedule Research Appointment</option>
                       <option>NDU Institutional Repository / Thesis Submission</option>
                       <option>Koha OPAC / Circulation Clearance</option>
+                      <option>News &amp; Announcements Inquiry</option>
                     </select>
                     <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-500" />
                   </div>
@@ -948,9 +949,7 @@ export function DatabaseModal({ database, onClose }: DatabaseModalProps) {
               </div>
             )}
 
-            <div className="rounded-md border border-stone-200 bg-[#FBF9F5] p-3.5 text-xs text-stone-600">
-              <strong className="text-stone-900">Access Method:</strong> {database.accessNote}
-            </div>
+            {/* Access Method hidden — credentials shown via eye-icon toggle above */}
 
             <div className="flex flex-wrap items-center justify-end gap-3 pt-2">
               <button
