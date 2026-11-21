@@ -3,7 +3,7 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
-import { db } from '../db.js';
+import { db } from '../db-index.js';
 import { requireAuth } from '../middleware/auth.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -87,7 +87,7 @@ router.post('/upload', requireAuth, (req, res) => {
     const subjectArea = area === 'Other' && area_other ? area_other : area || 'General Research';
 
     try {
-      const newSubmission = db.submissions.create({
+      const newSubmission = await db.submissions.create({
         user_id: req.user.id,
         title: title.trim(),
         subject_area: subjectArea,
@@ -103,20 +103,20 @@ router.post('/upload', requireAuth, (req, res) => {
       });
 
       // Notification to member
-      db.notifications.create({
+      await db.notifications.create({
         user_id: req.user.id,
         message: `Your manuscript "${newSubmission.title}" was submitted successfully and is awaiting review.`,
       });
 
       // Notify all admins
-      const allUsers = db.users.list();
+      const allUsers = (await db.users.list()) || [];
       const admins = allUsers.filter((u) => u.role === 'admin');
-      admins.forEach((admin) => {
-        db.notifications.create({
+      for (const admin of admins) {
+        await db.notifications.create({
           user_id: admin.id,
           message: `New manuscript received from ${req.user.full_name}: "${newSubmission.title}"`,
         });
-      });
+      }
 
       res.status(201).json({
         success: true,
@@ -132,10 +132,10 @@ router.post('/upload', requireAuth, (req, res) => {
 
 // @route   GET /api/submissions/my
 // @desc    Get current member's submitted manuscripts
-router.get('/my', requireAuth, (req, res) => {
+router.get('/my', requireAuth, async (req, res) => {
   try {
-    const list = db.submissions.getByUserId(req.user.id);
-    res.json({ success: true, submissions: list });
+    const list = await db.submissions.getByUserId(req.user.id);
+    res.json({ success: true, submissions: list || [] });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: 'Server error.' });
@@ -144,9 +144,9 @@ router.get('/my', requireAuth, (req, res) => {
 
 // @route   GET /api/submissions/stats
 // @desc    Get current member's submission statistics
-router.get('/stats', requireAuth, (req, res) => {
+router.get('/stats', requireAuth, async (req, res) => {
   try {
-    const list = db.submissions.getByUserId(req.user.id);
+    const list = (await db.submissions.getByUserId(req.user.id)) || [];
     const stats = {
       total: list.length,
       pending: list.filter((s) => s.status === 'pending').length,
@@ -163,10 +163,10 @@ router.get('/stats', requireAuth, (req, res) => {
 
 // @route   GET /api/submissions/notifications
 // @desc    Get current member's notifications
-router.get('/notifications', requireAuth, (req, res) => {
+router.get('/notifications', requireAuth, async (req, res) => {
   try {
-    const notifications = db.notifications.getByUserId(req.user.id);
-    res.json({ success: true, notifications });
+    const notifications = await db.notifications.getByUserId(req.user.id);
+    res.json({ success: true, notifications: notifications || [] });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: 'Server error.' });
@@ -175,9 +175,9 @@ router.get('/notifications', requireAuth, (req, res) => {
 
 // @route   POST /api/submissions/notifications/mark-read
 // @desc    Mark all notifications as read
-router.post('/notifications/mark-read', requireAuth, (req, res) => {
+router.post('/notifications/mark-read', requireAuth, async (req, res) => {
   try {
-    db.notifications.markAllRead(req.user.id);
+    await db.notifications.markAllRead(req.user.id);
     res.json({ success: true, message: 'Notifications marked as read.' });
   } catch (err) {
     console.error(err);

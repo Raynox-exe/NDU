@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-import { db } from '../db.js';
+import { db } from '../db-index.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'ndu_library_jwt_secret_key_2026';
 
@@ -16,7 +16,7 @@ export function generateToken(user) {
   );
 }
 
-export function authMiddleware(req, res, next) {
+export async function authMiddleware(req, res, next) {
   const authHeader = req.headers.authorization;
   let token = null;
 
@@ -35,7 +35,7 @@ export function authMiddleware(req, res, next) {
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
-    const user = db.users.findById(decoded.id);
+    const user = await db.users.findById(decoded.id);
     if (user && user.status === 'active') {
       req.user = user;
     } else {

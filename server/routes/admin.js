@@ -3,7 +3,7 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
-import { db } from '../db.js';
+import { db } from '../db-index.js';
 import { requireAdmin } from '../middleware/auth.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -43,15 +43,15 @@ const uploadResource = multer({
 // ==========================================
 // 1. STATS OVERVIEW
 // ==========================================
-router.get('/stats', (req, res) => {
+router.get('/stats', async (req, res) => {
   try {
-    const users = db.users.list();
-    const submissions = db.submissions.list();
-    const articles = db.articles.list();
-    const journals = db.journals.list();
-    const links = db.links.list();
-    const sections = db.sections.list();
-    const news = db.news.list();
+    const users = (await db.users.list()) || [];
+    const submissions = (await db.submissions.list()) || [];
+    const articles = (await db.articles.list()) || [];
+    const journals = (await db.journals.list()) || [];
+    const links = (await db.links.list()) || [];
+    const sections = (await db.sections.list()) || [];
+    const news = (await db.news.list()) || [];
 
     res.json({
       success: true,
@@ -76,28 +76,28 @@ router.get('/stats', (req, res) => {
 // ==========================================
 // 2. SUBMISSIONS & PEER REVIEW PIPELINE
 // ==========================================
-router.get('/submissions', (req, res) => {
+router.get('/submissions', async (req, res) => {
   try {
-    const submissions = db.submissions.list();
-    res.json({ success: true, submissions });
+    const submissions = await db.submissions.list();
+    res.json({ success: true, submissions: submissions || [] });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: 'Server error.' });
   }
 });
 
-router.post('/submissions/:id/review', (req, res) => {
+router.post('/submissions/:id/review', async (req, res) => {
   const { action, feedback } = req.body;
   const subId = req.params.id;
 
   try {
-    const submission = db.submissions.findById(subId);
+    const submission = await db.submissions.findById(subId);
     if (!submission) {
       return res.status(404).json({ success: false, message: 'Submission not found.' });
     }
 
     const newStatus = action === 'accept' ? 'accepted' : 'rejected';
-    const updated = db.submissions.update(subId, {
+    const updated = await db.submissions.update(subId, {
       status: newStatus,
       admin_feedback: feedback || '',
     });
@@ -108,7 +108,7 @@ router.post('/submissions/:id/review', (req, res) => {
         ? `Congratulations! Your manuscript "${submission.title}" has been ACCEPTED for publication in the NDU Library Journal series. Admin Feedback: ${feedback || 'Approved for publication issue assignment.'}`
         : `Your manuscript "${submission.title}" has been reviewed and requires revision or was not accepted. Feedback: ${feedback || 'No additional comments.'}`;
 
-    db.notifications.create({
+    await db.notifications.create({
       user_id: submission.user_id,
       message: notifMsg,
     });
@@ -127,51 +127,42 @@ router.post('/submissions/:id/review', (req, res) => {
 // ==========================================
 // 3. JOURNAL VOLUMES & ISSUES
 // ==========================================
-router.get('/journals', (req, res) => {
+router.get('/journals', async (req, res) => {
   try {
-    const list = db.journals.list(true);
-    res.json({ success: true, journals: list });
+    const list = await db.journals.list(true);
+    res.json({ success: true, journals: list || [] });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: 'Server error.' });
   }
 });
 
-router.post('/journals', (req, res) => {
-  const { volume_no, issue_no, publication_year, name } = req.body;
-  if (!volume_no || !issue_no || !publication_year) {
-    return res.status(400).json({
-      success: false,
-      message: 'Volume number, issue number, and publication year are required.',
-    });
+router.post('/journals', async (req, res) => {
+  const { name, volume_no, issue_no, publication_year, status } = req.body;
+  if (!name || !volume_no || !issue_no || !publication_year) {
+    return res.status(400).json({ success: false, message: 'Volume, issue, year, and name are required.' });
   }
 
   try {
-    const journalName = name?.trim() || `Volume ${volume_no}, Issue ${issue_no} (${publication_year})`;
-    const newJournal = db.journals.create({
+    const newJournal = await db.journals.create({
+      name: name.trim(),
       volume_no: Number(volume_no),
       issue_no: Number(issue_no),
       publication_year: Number(publication_year),
-      name: journalName,
-      status: 'draft',
+      status: status || 'draft',
       is_visible: true,
     });
-
-    res.status(201).json({
-      success: true,
-      message: 'New journal issue created as Draft.',
-      journal: newJournal,
-    });
+    res.status(201).json({ success: true, message: 'Journal issue created.', journal: newJournal });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ success: false, message: 'Server error.' });
+    res.status(500).json({ success: false, message: 'Server error creating journal issue.' });
   }
 });
 
-router.put('/journals/:id', (req, res) => {
+router.put('/journals/:id', async (req, res) => {
   try {
-    const updated = db.journals.update(req.params.id, req.body);
-    if (!updated) return res.status(404).json({ success: false, message: 'Journal not found.' });
+    const updated = await db.journals.update(req.params.id, req.body);
+    if (!updated) return res.status(404).json({ success: false, message: 'Journal issue not found.' });
     res.json({ success: true, message: 'Journal issue updated.', journal: updated });
   } catch (err) {
     console.error(err);
@@ -179,21 +170,21 @@ router.put('/journals/:id', (req, res) => {
   }
 });
 
-router.post('/journals/:id/deploy', (req, res) => {
+router.post('/journals/:id/deploy', async (req, res) => {
   try {
-    const deployed = db.journals.deploy(req.params.id);
+    const deployed = await db.journals.deploy(req.params.id);
     if (!deployed) return res.status(404).json({ success: false, message: 'Journal issue not found.' });
-    res.json({ success: true, message: 'Journal issue successfully deployed live to frontend!', journal: deployed });
+    res.json({ success: true, message: 'Journal deployed and published to digital library catalog!', journal: deployed });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ success: false, message: 'Server error.' });
+    res.status(500).json({ success: false, message: 'Server error deploying journal.' });
   }
 });
 
-router.delete('/journals/:id', (req, res) => {
+router.delete('/journals/:id', async (req, res) => {
   try {
-    const deleted = db.journals.delete(req.params.id);
-    res.json({ success: deleted, message: deleted ? 'Journal removed.' : 'Journal not found.' });
+    const deleted = await db.journals.delete(req.params.id);
+    res.json({ success: deleted, message: deleted ? 'Journal issue deleted.' : 'Journal issue not found.' });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: 'Server error.' });
@@ -201,23 +192,23 @@ router.delete('/journals/:id', (req, res) => {
 });
 
 // ==========================================
-// 4. ARTICLES & ASSIGNMENT TO ISSUES
+// 4. PUBLISHED ARTICLES MANAGEMENT
 // ==========================================
-router.get('/articles', (req, res) => {
+router.get('/articles', async (req, res) => {
   try {
-    const articles = db.articles.list(true);
-    const journals = db.journals.list(true);
-    // Enrich with volume/issue metadata
+    const articles = (await db.articles.list(true)) || [];
+    const journals = (await db.journals.list(true)) || [];
+
     const enriched = articles.map((a) => {
-      const journal = journals.find((j) => String(j.id) === String(a.journal_id));
+      const j = journals.find((journal) => String(journal.id) === String(a.journal_id));
       return {
         ...a,
-        volume_no: journal?.volume_no || null,
-        issue_no: journal?.issue_no || null,
-        publication_year: journal?.publication_year || null,
-        journal_name: journal?.name || 'Unassigned Volume',
+        journal_name: j?.name || 'Unassigned Volume',
+        volume_no: j?.volume_no,
+        issue_no: j?.issue_no,
       };
     });
+
     res.json({ success: true, articles: enriched });
   } catch (err) {
     console.error(err);
@@ -225,52 +216,60 @@ router.get('/articles', (req, res) => {
   }
 });
 
-router.post('/articles/assign', (req, res) => {
-  const { journal_id, sub_id, pages, download_enabled } = req.body;
+// Publish accepted submission to journal volume
+router.post('/articles/publish-submission', async (req, res) => {
+  const { sub_id, journal_id, page_range, custom_title, custom_authors } = req.body;
+
+  if (!sub_id || !journal_id) {
+    return res.status(400).json({ success: false, message: 'Submission ID and Target Journal are required.' });
+  }
 
   try {
-    const sub = db.submissions.findById(sub_id);
-    if (!sub) return res.status(404).json({ success: false, message: 'Manuscript submission not found.' });
+    const sub = await db.submissions.findById(sub_id);
+    if (!sub) return res.status(404).json({ success: false, message: 'Submission not found.' });
 
-    const journal = db.journals.findById(journal_id);
+    const journal = await db.journals.findById(journal_id);
     if (!journal) return res.status(404).json({ success: false, message: 'Target journal issue not found.' });
 
-    // Copy manuscript file to published directory
+    let finalPdf = sub.file_path;
     if (sub.file_path) {
-      const sourcePath = path.join(UPLOADS_MANUSCRIPTS_DIR, sub.file_path);
-      const destPath = path.join(UPLOADS_PUBLISHED_DIR, sub.file_path);
-      if (fs.existsSync(sourcePath) && !fs.existsSync(destPath)) {
+      const source = path.join(UPLOADS_MANUSCRIPTS_DIR, sub.file_path);
+      const dest = path.join(UPLOADS_PUBLISHED_DIR, sub.file_path);
+      if (fs.existsSync(source) && !fs.existsSync(dest)) {
         try {
-          fs.copyFileSync(sourcePath, destPath);
-        } catch (copyErr) {
-          console.error('[COPY FILE WARNING]', copyErr);
+          fs.copyFileSync(source, dest);
+        } catch (e) {
+          console.warn('Could not copy to published directory:', e);
         }
       }
     }
 
-    const newArticle = db.articles.create({
+    const newArticle = await db.articles.create({
       journal_id,
       submission_id: sub.id,
-      title: sub.title,
-      authors: sub.author_name,
+      title: custom_title || sub.title,
+      authors: custom_authors || sub.authors,
       abstract: sub.abstract,
-      content: 'Official published manuscript from NDU Library journals system.',
-      page_range: pages || '1 - 10',
-      file_path: sub.file_path,
-      download_enabled: download_enabled !== false,
+      page_range: page_range || '1-10',
+      file_path: finalPdf,
+      download_enabled: true,
       is_visible: true,
       status: 'published',
+      published_at: new Date().toISOString(),
     });
 
-    // Notify author of publication
-    db.notifications.create({
-      user_id: sub.user_id,
-      message: `Your manuscript "${sub.title}" is now PUBLISHED in ${journal.name} (Pages: ${newArticle.page_range}). It is live in the NDU Library e-journal repository!`,
-    });
+    await db.submissions.update(sub.id, { status: 'published' });
+
+    if (sub.user_id) {
+      await db.notifications.create({
+        user_id: sub.user_id,
+        message: `Your paper "${newArticle.title}" is officially PUBLISHED in ${journal.name}!`,
+      });
+    }
 
     res.status(201).json({
       success: true,
-      message: 'Article assigned and published into journal issue successfully!',
+      message: `Paper successfully published to ${journal.name}!`,
       article: newArticle,
     });
   } catch (err) {
@@ -279,21 +278,21 @@ router.post('/articles/assign', (req, res) => {
   }
 });
 
-router.put('/articles/:id', (req, res) => {
+router.put('/articles/:id', async (req, res) => {
   try {
-    const updated = db.articles.update(req.params.id, req.body);
+    const updated = await db.articles.update(req.params.id, req.body);
     if (!updated) return res.status(404).json({ success: false, message: 'Article not found.' });
-    res.json({ success: true, message: 'Article details updated.', article: updated });
+    res.json({ success: true, message: 'Article updated successfully.', article: updated });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: 'Server error.' });
   }
 });
 
-router.delete('/articles/:id', (req, res) => {
+router.delete('/articles/:id', async (req, res) => {
   try {
-    const deleted = db.articles.delete(req.params.id);
-    res.json({ success: deleted, message: deleted ? 'Article removed.' : 'Article not found.' });
+    const deleted = await db.articles.delete(req.params.id);
+    res.json({ success: deleted, message: deleted ? 'Article removed from issue.' : 'Article not found.' });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: 'Server error.' });
@@ -301,40 +300,38 @@ router.delete('/articles/:id', (req, res) => {
 });
 
 // ==========================================
-// 5. DYNAMIC SECTIONS & DROPDOWNS
+// 5. QUICK-LINK SECTIONS
 // ==========================================
-router.get('/sections', (req, res) => {
+router.get('/sections', async (req, res) => {
   try {
-    const sections = db.sections.list(true);
-    res.json({ success: true, sections });
+    const sections = await db.sections.list(true);
+    res.json({ success: true, sections: sections || [] });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: 'Server error.' });
   }
 });
 
-router.post('/sections', (req, res) => {
-  const { title, type, target_nav, description } = req.body;
+router.post('/sections', async (req, res) => {
+  const { title, icon } = req.body;
   if (!title) return res.status(400).json({ success: false, message: 'Section title is required.' });
 
   try {
-    const newSection = db.sections.create({
+    const newSection = await db.sections.create({
       title: title.trim(),
-      type: type || 'dropdown',
-      target_nav: target_nav || 'header_dropdown',
-      description: description?.trim() || '',
+      icon: icon || 'Folder',
       is_active: true,
     });
-    res.status(201).json({ success: true, message: 'Section/Dropdown created.', section: newSection });
+    res.status(201).json({ success: true, message: 'Section created.', section: newSection });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: 'Server error.' });
   }
 });
 
-router.put('/sections/:id', (req, res) => {
+router.put('/sections/:id', async (req, res) => {
   try {
-    const updated = db.sections.update(req.params.id, req.body);
+    const updated = await db.sections.update(req.params.id, req.body);
     if (!updated) return res.status(404).json({ success: false, message: 'Section not found.' });
     res.json({ success: true, message: 'Section updated.', section: updated });
   } catch (err) {
@@ -343,9 +340,9 @@ router.put('/sections/:id', (req, res) => {
   }
 });
 
-router.delete('/sections/:id', (req, res) => {
+router.delete('/sections/:id', async (req, res) => {
   try {
-    const deleted = db.sections.delete(req.params.id);
+    const deleted = await db.sections.delete(req.params.id);
     res.json({ success: deleted, message: deleted ? 'Section deleted.' : 'Section not found.' });
   } catch (err) {
     console.error(err);
@@ -354,44 +351,43 @@ router.delete('/sections/:id', (req, res) => {
 });
 
 // ==========================================
-// 6. DYNAMIC LINKS & RESOURCES (DISABLE & UPDATE MODULE)
+// 6. DYNAMIC LINKS MANAGEMENT
 // ==========================================
-router.get('/links', (req, res) => {
+router.get('/links', async (req, res) => {
   try {
-    const links = db.links.list(true);
-    res.json({ success: true, links });
+    const links = await db.links.list(true);
+    res.json({ success: true, links: links || [] });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: 'Server error.' });
   }
 });
 
-router.post('/links', (req, res) => {
-  const { section_id, name, url, description, category, badge, action_type, file_path } = req.body;
-  if (!name) return res.status(400).json({ success: false, message: 'Link name is required.' });
+router.post('/links', async (req, res) => {
+  const { section_id, label, url, description, icon } = req.body;
+  if (!section_id || !label || !url) {
+    return res.status(400).json({ success: false, message: 'Section, label, and URL are required.' });
+  }
 
   try {
-    const newLink = db.links.create({
-      section_id: section_id || 'sec-services',
-      name: name.trim(),
-      url: url?.trim() || '',
-      file_path: file_path || '',
+    const newLink = await db.links.create({
+      section_id,
+      label: label.trim(),
+      url: url.trim(),
       description: description?.trim() || '',
-      category: category?.trim() || 'General Resource',
-      badge: badge?.trim() || '',
-      action_type: action_type || (url ? 'external' : 'detail'),
+      icon: icon || 'ExternalLink',
       is_active: true,
     });
-    res.status(201).json({ success: true, message: 'Resource link created.', link: newLink });
+    res.status(201).json({ success: true, message: 'Link created successfully.', link: newLink });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: 'Server error.' });
   }
 });
 
-router.put('/links/:id', (req, res) => {
+router.put('/links/:id', async (req, res) => {
   try {
-    const updated = db.links.update(req.params.id, req.body);
+    const updated = await db.links.update(req.params.id, req.body);
     if (!updated) return res.status(404).json({ success: false, message: 'Link not found.' });
     res.json({ success: true, message: 'Link updated successfully.', link: updated });
   } catch (err) {
@@ -400,9 +396,9 @@ router.put('/links/:id', (req, res) => {
   }
 });
 
-router.delete('/links/:id', (req, res) => {
+router.delete('/links/:id', async (req, res) => {
   try {
-    const deleted = db.links.delete(req.params.id);
+    const deleted = await db.links.delete(req.params.id);
     res.json({ success: deleted, message: deleted ? 'Link deleted.' : 'Link not found.' });
   } catch (err) {
     console.error(err);
@@ -428,22 +424,22 @@ router.post('/links/upload-resource', uploadResource.single('resourceFile'), (re
 // ==========================================
 // 7. DYNAMIC NEWS & BULLETINS
 // ==========================================
-router.get('/news', (req, res) => {
+router.get('/news', async (req, res) => {
   try {
-    const news = db.news.list(true);
-    res.json({ success: true, news });
+    const news = await db.news.list(true);
+    res.json({ success: true, news: news || [] });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: 'Server error.' });
   }
 });
 
-router.post('/news', (req, res) => {
+router.post('/news', async (req, res) => {
   const { title, category, date, venue, summary, content, file_path, image_url } = req.body;
   if (!title) return res.status(400).json({ success: false, message: 'News title is required.' });
 
   try {
-    const newNews = db.news.create({
+    const newNews = await db.news.create({
       title: title.trim(),
       category: category?.trim() || 'Bulletins & Circulars',
       date: date?.trim() || 'Current Announcement',
@@ -461,9 +457,9 @@ router.post('/news', (req, res) => {
   }
 });
 
-router.put('/news/:id', (req, res) => {
+router.put('/news/:id', async (req, res) => {
   try {
-    const updated = db.news.update(req.params.id, req.body);
+    const updated = await db.news.update(req.params.id, req.body);
     if (!updated) return res.status(404).json({ success: false, message: 'News item not found.' });
     res.json({ success: true, message: 'News item updated.', news: updated });
   } catch (err) {
@@ -472,9 +468,9 @@ router.put('/news/:id', (req, res) => {
   }
 });
 
-router.delete('/news/:id', (req, res) => {
+router.delete('/news/:id', async (req, res) => {
   try {
-    const deleted = db.news.delete(req.params.id);
+    const deleted = await db.news.delete(req.params.id);
     res.json({ success: deleted, message: deleted ? 'News item removed.' : 'News item not found.' });
   } catch (err) {
     console.error(err);
@@ -485,20 +481,20 @@ router.delete('/news/:id', (req, res) => {
 // ==========================================
 // 8. E-JOURNAL CATALOG OVERRIDES (DISABLE ANY INDIVIDUAL JOURNAL)
 // ==========================================
-router.get('/journal-overrides', (req, res) => {
+router.get('/journal-overrides', async (req, res) => {
   try {
-    const overrides = db.journalOverrides.getAll();
-    res.json({ success: true, overrides });
+    const overrides = await db.journalOverrides.getAll();
+    res.json({ success: true, overrides: overrides || {} });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: 'Server error.' });
   }
 });
 
-router.post('/journal-overrides/:id/toggle', (req, res) => {
+router.post('/journal-overrides/:id/toggle', async (req, res) => {
   const { is_active } = req.body;
   try {
-    const updated = db.journalOverrides.toggle(req.params.id, is_active);
+    const updated = await db.journalOverrides.toggle(req.params.id, is_active);
     res.json({ success: true, message: `Journal entry visibility toggled to ${is_active ? 'active' : 'disabled'}.`, override: updated });
   } catch (err) {
     console.error(err);
@@ -509,20 +505,20 @@ router.post('/journal-overrides/:id/toggle', (req, res) => {
 // ==========================================
 // 9. USERS DIRECTORY & ROLE MANAGEMENT
 // ==========================================
-router.get('/users', (req, res) => {
+router.get('/users', async (req, res) => {
   try {
-    const users = db.users.list();
-    res.json({ success: true, users });
+    const users = await db.users.list();
+    res.json({ success: true, users: users || [] });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: 'Server error.' });
   }
 });
 
-router.put('/users/:id', (req, res) => {
+router.put('/users/:id', async (req, res) => {
   const { role, status } = req.body;
   try {
-    const updated = db.users.update(req.params.id, { role, status });
+    const updated = await db.users.update(req.params.id, { role, status });
     if (!updated) return res.status(404).json({ success: false, message: 'User not found.' });
     res.json({ success: true, message: 'User updated.', user: updated });
   } catch (err) {

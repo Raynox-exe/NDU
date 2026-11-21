@@ -1,6 +1,6 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
-import { db } from '../db.js';
+import { db } from '../db-index.js';
 import { generateToken, requireAuth } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -19,7 +19,7 @@ router.post('/register', async (req, res) => {
     }
 
     const normalizedEmail = email.trim().toLowerCase();
-    const existing = db.users.findByEmail(normalizedEmail);
+    const existing = await db.users.findByEmail(normalizedEmail);
     if (existing) {
       return res.status(400).json({
         success: false,
@@ -35,7 +35,7 @@ router.post('/register', async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = db.users.create({
+    const newUser = await db.users.create({
       full_name: fullName.trim(),
       email: normalizedEmail,
       password: hashedPassword,
@@ -43,7 +43,7 @@ router.post('/register', async (req, res) => {
     });
 
     // Create welcome notification
-    db.notifications.create({
+    await db.notifications.create({
       user_id: newUser.id,
       message: `Welcome to Niger Delta University Library, ${newUser.full_name}! You can now submit manuscripts and track peer reviews online.`,
     });
@@ -76,7 +76,7 @@ router.post('/login', async (req, res) => {
     }
 
     const normalizedEmail = email.trim().toLowerCase();
-    const user = db.users.findByEmail(normalizedEmail);
+    const user = await db.users.findByEmail(normalizedEmail);
 
     if (!user) {
       return res.status(401).json({
