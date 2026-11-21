@@ -167,7 +167,7 @@ export function MemberDashboardView({ user, onLogout, onNavigateHome }: MemberDa
   ];
 
   return (
-    <div className="min-h-screen bg-stone-100 animate-fade-in">
+    <div className="min-h-[calc(100vh-4rem)] sm:min-h-[calc(100vh-5rem)] bg-stone-100 flex flex-col animate-fade-in">
       {/* ── Top Header Bar (matches Admin Console) ── */}
       <header className="bg-[#0D3121] text-white shadow-md sticky top-16 sm:top-20 z-30">
         <div className="flex items-center justify-between px-4 sm:px-6 h-14">
@@ -223,7 +223,7 @@ export function MemberDashboardView({ user, onLogout, onNavigateHome }: MemberDa
       </header>
 
       {/* ── Main body: sidebar + content (matches Admin Console layout) ── */}
-      <div className="flex relative items-start">
+      <div className="flex relative items-start flex-1 min-h-[calc(100vh-7.5rem)] sm:min-h-[calc(100vh-8.5rem)] bg-stone-100">
         {/* ── Sidebar ── */}
         <aside
           className={`${

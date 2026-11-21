@@ -513,7 +513,7 @@ export function AdminDashboardView({ user, onLogout, onNavigateHome }: AdminDash
   const activeNavItem = navItems.find((n) => n.id === activeTab);
 
   return (
-    <div className="min-h-screen bg-stone-100 animate-fade-in">
+    <div className="min-h-[calc(100vh-4rem)] sm:min-h-[calc(100vh-5rem)] bg-stone-100 flex flex-col animate-fade-in">
       {/* Toast popup */}
       {toast && (
         <div
@@ -581,7 +581,7 @@ export function AdminDashboardView({ user, onLogout, onNavigateHome }: AdminDash
       </header>
 
       {/* ── Main body: sidebar + content ── */}
-      <div className="flex relative items-start">
+      <div className="flex relative items-start flex-1 min-h-[calc(100vh-7.5rem)] sm:min-h-[calc(100vh-8.5rem)] bg-stone-100">
         {/* ── Sidebar ── */}
         <aside
           className={`${

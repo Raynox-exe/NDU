@@ -102,7 +102,13 @@ export default function App() {
 
   return (
     <MotionConfig reducedMotion="user">
-      <div className="min-h-screen flex flex-col bg-[#FBF9F5] text-[#1C1917]">
+      <div
+        className={`min-h-screen flex flex-col text-[#1C1917] ${
+          activePage === 'member-portal' || activePage === 'admin-portal'
+            ? 'bg-stone-100'
+            : 'bg-[#FBF9F5]'
+        }`}
+      >
         <ScrollProgressRule />
 
         <HeaderNav

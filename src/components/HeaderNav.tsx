@@ -452,7 +452,7 @@ export function HeaderNav({
                   <UserIcon className="h-3.5 w-3.5" />
                 )}
                 <span className="truncate max-w-[130px]">
-                  {currentUser.role === 'admin' ? 'Admin Console' : currentUser.full_name.split(' ')[0]}
+                  {currentUser.role === 'admin' ? 'Admin Console' : 'Dashboard'}
                 </span>
               </button>
             ) : (
