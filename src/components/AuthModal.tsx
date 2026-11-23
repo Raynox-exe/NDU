@@ -58,29 +58,6 @@ export function AuthModal({ isOpen, onClose, onSuccess, initialMode = 'login' }:
     }
   };
 
-  const handleQuickDemo = async (role: 'admin' | 'researcher') => {
-    setError(null);
-    setLoading(true);
-    const demoEmail = role === 'admin' ? 'admin@ndu.edu.ng' : 'researcher@ndu.edu.ng';
-    const demoPassword = role === 'admin' ? 'Admin@123' : 'Member@123';
-    setEmail(demoEmail);
-    setPassword(demoPassword);
-
-    try {
-      const res = await api.auth.login(demoEmail, demoPassword);
-      if (res.success) {
-        onSuccess(res.user);
-        onClose();
-      } else {
-        setError(res.message || 'Demo login failed');
-      }
-    } catch (err: any) {
-      setError('Could not connect to authentication service.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-sm animate-fade-in">
       <div className="relative w-full max-w-md overflow-hidden rounded-xl bg-white shadow-2xl border border-stone-200">
