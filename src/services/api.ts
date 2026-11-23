@@ -122,6 +122,7 @@ export interface DynamicNewspaper {
   publisher?: string;
   summary: string;
   file_path?: string;
+  cover_image?: string;
   url?: string;
   file_size?: string;
   page_count?: number;
