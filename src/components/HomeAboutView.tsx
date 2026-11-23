@@ -96,6 +96,10 @@ export function HomeAboutView({
       onNavigate('services');
       return;
     }
+    if (item.internalRoute === 'newspapers') {
+      onNavigate('newspapers');
+      return;
+    }
     onSelectDatabase(item);
   };
 

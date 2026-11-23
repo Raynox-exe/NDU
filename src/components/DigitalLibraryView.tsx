@@ -31,6 +31,7 @@ interface DigitalLibraryViewProps {
   onSelectDatabase: (db: DatabaseResource) => void;
   onContactLibrarian: () => void;
   onNavigateServices: () => void;
+  onNavigateNewspapers?: () => void;
 }
 
 const BOOKMARKS_KEY = 'ndu_library_bookmarked_journals_v1';
@@ -41,6 +42,7 @@ export function DigitalLibraryView({
   onSelectDatabase,
   onContactLibrarian,
   onNavigateServices,
+  onNavigateNewspapers,
 }: DigitalLibraryViewProps) {
   const [expandedFacultyId, setExpandedFacultyId] = useState<string>(selectedFacultyId);
   const [selectedDeptId, setSelectedDeptId] = useState<string>('');
@@ -343,6 +345,11 @@ export function DigitalLibraryView({
     }
     if (db.internalRoute === 'services') {
       onNavigateServices();
+      return;
+    }
+    if (db.internalRoute === 'newspapers') {
+      if (onNavigateNewspapers) onNavigateNewspapers();
+      else onNavigateServices();
       return;
     }
     if (db.internalRoute === 'digital-computers') {
