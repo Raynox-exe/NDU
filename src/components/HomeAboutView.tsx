@@ -152,11 +152,6 @@ export function HomeAboutView({
                         {link.name}
                       </span>
                       <div className="flex items-center gap-1.5 shrink-0">
-                        {hasCredentials && (
-                          <span className="text-[9px] font-bold uppercase tracking-wider bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded">
-                            Login Info
-                          </span>
-                        )}
                         {link.url ? (
                           <ExternalLink className="h-3.5 w-3.5 text-stone-400 group-hover:text-[#14452F] group-hover:translate-x-0.5 transition-all" />
                         ) : (

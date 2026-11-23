@@ -405,12 +405,7 @@ export function DigitalLibraryView({
                       <span className="group-hover:underline underline-offset-2 leading-snug">
                         {db.name}
                       </span>
-                      {hasCredentials && (
-                        <span className="text-[9px] font-bold uppercase tracking-wider bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded shrink-0">
-                          Login Info
-                        </span>
-                      )}
-                      {!hasCredentials && db.url && (
+                      {db.url && (
                         <ExternalLink className="h-3 w-3 text-stone-400 group-hover:text-[#14452F] group-hover:translate-x-0.5 transition-all shrink-0" />
                       )}
                     </button>

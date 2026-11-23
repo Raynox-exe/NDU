@@ -272,26 +272,12 @@ export function NewsEventsView({ onOpenJournals: _onOpenJournals }: { onOpenJour
     });
   }, [newsItems, selectedCategory, searchQuery]);
 
-  const latestNews = newsItems[0];
-
   return (
     <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-10 py-8 space-y-8 animate-fade-in">
-      {/* Header with Title and Live Updates Banner */}
+      {/* Header with Title */}
       <RevealOnLoad delay={0}>
-        <div className="flex flex-col items-center text-center border-b border-stone-200 pb-8 space-y-4">
+        <div className="flex flex-col items-center text-center border-b border-stone-200 pb-8">
           <div className="space-y-3 max-w-3xl mx-auto flex flex-col items-center">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-600"></span>
-              </span>
-              <span>Live Announcements &amp; University Bulletins</span>
-              <span className="text-stone-300">·</span>
-              <span className="text-emerald-700 font-mono text-[11px]">
-                {isLoading ? '…' : `${newsItems.length} Published`}
-              </span>
-            </div>
-
             <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight text-[#1C1917] [text-wrap:balance]">
               Library News, Circulars &amp; Events
             </h1>
@@ -300,17 +286,6 @@ export function NewsEventsView({ onOpenJournals: _onOpenJournals }: { onOpenJour
               and digital orientation schedules for Niger Delta University students, researchers, and faculty.
             </p>
           </div>
-
-          <button
-            type="button"
-            onClick={() => fetchNews()}
-            disabled={isRefreshing}
-            className="inline-flex items-center gap-2 rounded-lg border border-stone-300 bg-white px-3.5 py-2 text-xs font-semibold text-stone-700 hover:bg-stone-50 active:scale-98 transition-all cursor-pointer shadow-xs"
-            title="Refresh latest announcements"
-          >
-            <RefreshCw className={`h-3.5 w-3.5 text-stone-500 ${isRefreshing ? 'animate-spin' : ''}`} />
-            <span>{isRefreshing ? 'Checking Updates…' : 'Refresh Updates'}</span>
-          </button>
         </div>
       </RevealOnLoad>
 
@@ -335,109 +310,6 @@ export function NewsEventsView({ onOpenJournals: _onOpenJournals }: { onOpenJour
             </div>
           ))}
         </div>
-      )}
-
-      {/* Latest Featured News Banner (if present) */}
-      {!isLoading && latestNews && (
-        <div className="rounded-xl border border-emerald-200 bg-gradient-to-r from-emerald-50/70 to-stone-50 p-5 sm:p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="space-y-1.5 flex-1">
-            <div className="flex items-center gap-2 text-xs font-semibold text-emerald-800">
-              <Bell className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
-              <span>CURRENT PUBLISHED BULLETIN</span>
-              <span>·</span>
-              <span className="text-stone-500 font-normal">{latestNews.date}</span>
-            </div>
-            <h2 className="font-serif text-lg sm:text-xl font-bold text-stone-900 leading-snug">
-              {latestNews.title}
-            </h2>
-            <p className="text-xs text-stone-600 line-clamp-2 max-w-3xl">
-              {latestNews.summary}
-            </p>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => setSelectedNews(latestNews)}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-[#14452F] hover:bg-[#0D3121] px-4 py-2 text-xs font-semibold text-white transition-colors cursor-pointer shrink-0 shadow-xs self-start sm:self-auto"
-          >
-            <span>Read Bulletin</span>
-            <ArrowRight className="h-3.5 w-3.5" />
-          </button>
-        </div>
-      )}
-
-      {/* Filter and Search Bar */}
-      {!isLoading && (
-      <div className="rounded-xl border border-stone-200 bg-white p-4 sm:p-5 shadow-xs space-y-3">
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-stone-400" />
-            <input
-              type="text"
-              placeholder="Search announcements by headline, venue, or keywords…"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full rounded-lg border border-stone-300 bg-white pl-9 pr-3 py-2 text-xs text-stone-900 outline-none focus:border-[#14452F] focus:ring-1 focus:ring-[#14452F] transition-all"
-            />
-          </div>
-
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-stone-600 whitespace-nowrap">Category:</span>
-            <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="rounded-lg border border-stone-300 bg-white px-3 py-2 text-xs font-medium text-stone-900 outline-none cursor-pointer"
-            >
-              <option value="all">All Categories ({newsItems.length})</option>
-              {categories.map((c) => (
-                <option key={c} value={c}>
-                  {c} ({newsItems.filter((n) => n.category === c).length})
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        {/* Quick Category Pills */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs no-scrollbar">
-          <button
-            type="button"
-            onClick={() => setSelectedCategory('all')}
-            className={`px-3 py-1 rounded-full font-semibold transition-all whitespace-nowrap cursor-pointer ${
-              selectedCategory === 'all'
-                ? 'bg-[#14452F] text-white shadow-xs'
-                : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
-            }`}
-          >
-            All Updates ({newsItems.length})
-          </button>
-          {categories.map((cat) => {
-            const count = newsItems.filter((n) => n.category === cat).length;
-            const isSelected = selectedCategory === cat;
-            return (
-              <button
-                key={cat}
-                type="button"
-                onClick={() => setSelectedCategory(isSelected ? 'all' : cat)}
-                className={`px-3 py-1 rounded-full font-medium transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
-                  isSelected
-                    ? 'bg-[#0B3B69] text-white font-semibold shadow-xs'
-                    : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
-                }`}
-              >
-                <span>{cat}</span>
-                <span
-                  className={`text-[10px] px-1.5 py-0.2 rounded-full ${
-                    isSelected ? 'bg-white/20 text-white' : 'bg-stone-200 text-stone-700'
-                  }`}
-                >
-                  {count}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
       )}
 
       {/* News Cards Grid */}
@@ -877,79 +749,6 @@ export function DatabaseModal({ database, onClose }: DatabaseModalProps) {
             </div>
 
             <p className="text-sm text-stone-700 leading-relaxed">{database.description}</p>
-
-            {/* Credentials Card if available */}
-            {(database.username || database.password) && (
-              <div className="rounded-lg border border-amber-300 bg-amber-50/80 p-4 space-y-3">
-                <div className="flex items-center gap-2 text-amber-900 font-semibold text-xs tracking-wide uppercase">
-                  <Key className="h-4 w-4 text-amber-700" />
-                  <span>Subscribed Access Credentials</span>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                  {database.username && (
-                    <div className="bg-white p-2.5 rounded border border-amber-200 shadow-xs">
-                      <span className="text-[10px] uppercase font-bold text-stone-500 block">Username</span>
-                      <div className="flex items-center justify-between mt-1 gap-1">
-                        <code className="font-mono font-bold text-stone-900 text-sm select-all flex-1 overflow-hidden">
-                          {showUser ? database.username : '•'.repeat(Math.min(database.username.length, 12))}
-                        </code>
-                        <div className="flex items-center gap-0.5 shrink-0">
-                          <button
-                            type="button"
-                            onClick={() => setShowUser((v) => !v)}
-                            className="p-1 hover:bg-stone-100 rounded text-stone-500 transition-colors cursor-pointer"
-                            title={showUser ? 'Hide Username' : 'Show Username'}
-                          >
-                            {showUser ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => copyToClipboard(database.username!, 'user')}
-                            className="p-1 hover:bg-stone-100 rounded text-stone-600 transition-colors cursor-pointer"
-                            title="Copy Username"
-                          >
-                            {copiedUser ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                  {database.password && (
-                    <div className="bg-white p-2.5 rounded border border-amber-200 shadow-xs">
-                      <span className="text-[10px] uppercase font-bold text-stone-500 block">Password</span>
-                      <div className="flex items-center justify-between mt-1 gap-1">
-                        <code className="font-mono font-bold text-stone-900 text-sm select-all flex-1 overflow-hidden">
-                          {showPass ? database.password : '•'.repeat(Math.min(database.password.length, 12))}
-                        </code>
-                        <div className="flex items-center gap-0.5 shrink-0">
-                          <button
-                            type="button"
-                            onClick={() => setShowPass((v) => !v)}
-                            className="p-1 hover:bg-stone-100 rounded text-stone-500 transition-colors cursor-pointer"
-                            title={showPass ? 'Hide Password' : 'Show Password'}
-                          >
-                            {showPass ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => copyToClipboard(database.password!, 'pass')}
-                            className="p-1 hover:bg-stone-100 rounded text-stone-600 transition-colors cursor-pointer"
-                            title="Copy Password"
-                          >
-                            {copiedPass ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-                <p className="text-[11px] text-amber-800 leading-tight">
-                  Enter these credentials when prompted on the official database authentication screen.
-                </p>
-              </div>
-            )}
-
-            {/* Access Method hidden — credentials shown via eye-icon toggle above */}
 
             <div className="flex flex-wrap items-center justify-end gap-3 pt-2">
               <button
