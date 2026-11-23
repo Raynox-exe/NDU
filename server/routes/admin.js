@@ -549,4 +549,61 @@ router.put('/users/:id', async (req, res) => {
   }
 });
 
+// ==========================================
+// 10. NEWSPAPERS UPLOAD & MANAGEMENT
+// ==========================================
+router.get('/newspapers', async (req, res) => {
+  try {
+    const newspapers = await db.newspapers.list(true);
+    res.json({ success: true, newspapers: newspapers || [] });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Server error.' });
+  }
+});
+
+router.post('/newspapers', async (req, res) => {
+  const { title, edition, date, publisher, summary, file_path, url, file_size, page_count } = req.body;
+  if (!title) return res.status(400).json({ success: false, message: 'Newspaper title is required.' });
+
+  try {
+    const newPaper = await db.newspapers.create({
+      title: title.trim(),
+      edition: edition?.trim() || 'Daily Edition',
+      date: date?.trim() || new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
+      publisher: publisher?.trim() || '',
+      summary: summary?.trim() || '',
+      file_path: file_path || '',
+      url: url?.trim() || '',
+      file_size: file_size || '',
+      page_count: page_count ? Number(page_count) : undefined,
+    });
+    res.status(201).json({ success: true, message: 'Newspaper edition uploaded.', newspaper: newPaper });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Server error.' });
+  }
+});
+
+router.put('/newspapers/:id', async (req, res) => {
+  try {
+    const updated = await db.newspapers.update(req.params.id, req.body);
+    if (!updated) return res.status(404).json({ success: false, message: 'Newspaper not found.' });
+    res.json({ success: true, message: 'Newspaper updated.', newspaper: updated });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Server error.' });
+  }
+});
+
+router.delete('/newspapers/:id', async (req, res) => {
+  try {
+    const deleted = await db.newspapers.delete(req.params.id);
+    res.json({ success: deleted, message: deleted ? 'Newspaper deleted.' : 'Newspaper not found.' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Server error.' });
+  }
+});
+
 export default router;

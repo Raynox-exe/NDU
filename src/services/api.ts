@@ -114,6 +114,21 @@ export interface DynamicNews {
   created_at: string;
 }
 
+export interface DynamicNewspaper {
+  id: string;
+  title: string;
+  edition: string;
+  date: string;
+  publisher?: string;
+  summary: string;
+  file_path?: string;
+  url?: string;
+  file_size?: string;
+  page_count?: number;
+  is_active: boolean;
+  created_at: string;
+}
+
 function getAuthHeaders(): HeadersInit {
   const token = localStorage.getItem('ndu_token');
   const headers: HeadersInit = {
@@ -283,6 +298,19 @@ export const api = {
     async getJournalOverrides(): Promise<{ success: boolean; overrides: Record<string, { is_active?: boolean }> }> {
       const res = await fetch(`${API_BASE}/api/public/journal-overrides`);
       return res.json();
+    },
+
+    async getNewspapers(): Promise<{ success: boolean; newspapers: DynamicNewspaper[] }> {
+      try {
+        const res = await fetch(`${API_BASE}/api/public/newspapers`);
+        const data = await res.json();
+        if (data && data.success && Array.isArray(data.newspapers)) {
+          return data;
+        }
+      } catch (e) {
+        // Fallback handled by caller
+      }
+      return { success: false, newspapers: [] };
     },
   },
 
@@ -526,6 +554,38 @@ export const api = {
 
     async deleteJournalOverride(journalId: string) {
       const res = await fetch(`${API_BASE}/api/admin/journal-overrides/${journalId}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders(),
+      });
+      return res.json();
+    },
+
+    // Newspapers Management
+    async getNewspapers(): Promise<{ success: boolean; newspapers: DynamicNewspaper[] }> {
+      const res = await fetch(`${API_BASE}/api/admin/newspapers`, { headers: getAuthHeaders() });
+      return res.json();
+    },
+
+    async createNewspaper(data: Partial<DynamicNewspaper>) {
+      const res = await fetch(`${API_BASE}/api/admin/newspapers`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(data),
+      });
+      return res.json();
+    },
+
+    async updateNewspaper(id: string, updates: Partial<DynamicNewspaper>) {
+      const res = await fetch(`${API_BASE}/api/admin/newspapers/${id}`, {
+        method: 'PUT',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(updates),
+      });
+      return res.json();
+    },
+
+    async deleteNewspaper(id: string) {
+      const res = await fetch(`${API_BASE}/api/admin/newspapers/${id}`, {
         method: 'DELETE',
         headers: getAuthHeaders(),
       });

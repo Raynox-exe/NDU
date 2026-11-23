@@ -123,4 +123,16 @@ router.get('/journal-overrides', async (req, res) => {
   }
 });
 
+// @route   GET /api/public/newspapers
+// @desc    Get active published newspapers
+router.get('/newspapers', async (req, res) => {
+  try {
+    const newspapers = await db.newspapers.list(false);
+    res.json({ success: true, newspapers: newspapers || [] });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Server error.' });
+  }
+});
+
 export default router;

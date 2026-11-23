@@ -15,7 +15,8 @@ export type AppPage =
   | 'contact'
   | 'member-portal'
   | 'admin-portal'
-  | 'faculty-library';
+  | 'faculty-library'
+  | 'newspapers';
 
 export interface UniversityPublicationLink {
   id: string;

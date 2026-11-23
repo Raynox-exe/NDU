@@ -23,6 +23,7 @@ import {
   NewsEventsView,
   ServicesView,
 } from './components/ServicesNewsContactViews';
+import { NewspapersView } from './components/NewspapersView';
 import type { DatabaseResource } from './data/libraryMeta';
 import { api, type User } from './services/api';
 
@@ -176,6 +177,7 @@ export default function App() {
                   onSelectDatabase={(db) => setActiveDatabase(db)}
                   onContactLibrarian={() => handleNavigate('contact')}
                   onNavigateServices={() => handleNavigate('services')}
+                  onNavigateNewspapers={() => handleNavigate('newspapers')}
                 />
               )}
 
@@ -184,6 +186,13 @@ export default function App() {
                   highlightedServiceId={highlightedServiceId}
                   onOpenDigitalLibrary={() => handleNavigate('digital-library')}
                   onOpenJournals={() => handleOpenJournals(selectedFacultyId)}
+                />
+              )}
+
+              {activePage === 'newspapers' && (
+                <NewspapersView
+                  onNavigateHome={() => handleNavigate('home')}
+                  onNavigateDigitalLibrary={() => handleNavigate('digital-library')}
                 />
               )}
 

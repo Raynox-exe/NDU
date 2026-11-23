@@ -39,6 +39,7 @@ import {
   type DynamicSection,
   type DynamicLink,
   type DynamicNews,
+  type DynamicNewspaper,
 } from '../services/api';
 import { FACULTY_CATALOGS, TOTAL_JOURNAL_COUNT } from '../data/journalsIndex';
 
@@ -50,7 +51,7 @@ interface AdminDashboardViewProps {
 
 export function AdminDashboardView({ user, onLogout, onNavigateHome }: AdminDashboardViewProps) {
   const [activeTab, setActiveTab] = useState<
-    'overview' | 'submissions' | 'journals' | 'articles' | 'links' | 'news' | 'overrides' | 'users'
+    'overview' | 'submissions' | 'journals' | 'articles' | 'links' | 'news' | 'newspapers' | 'overrides' | 'users'
   >('overview');
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
@@ -65,8 +66,21 @@ export function AdminDashboardView({ user, onLogout, onNavigateHome }: AdminDash
   const [sections, setSections] = useState<DynamicSection[]>([]);
   const [links, setLinks] = useState<DynamicLink[]>([]);
   const [news, setNews] = useState<DynamicNews[]>([]);
+  const [newspapers, setNewspapers] = useState<DynamicNewspaper[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [overrides, setOverrides] = useState<Record<string, { is_active?: boolean }>>({});
+
+  // Newspaper modal & states
+  const [showNewspaperModal, setShowNewspaperModal] = useState(false);
+  const [editingNewspaper, setEditingNewspaper] = useState<DynamicNewspaper | null>(null);
+  const [newspaperTitle, setNewspaperTitle] = useState('');
+  const [newspaperEdition, setNewspaperEdition] = useState('');
+  const [newspaperDate, setNewspaperDate] = useState('');
+  const [newspaperPublisher, setNewspaperPublisher] = useState('');
+  const [newspaperSummary, setNewspaperSummary] = useState('');
+  const [newspaperUrl, setNewspaperUrl] = useState('');
+  const [newspaperFile, setNewspaperFile] = useState<File | null>(null);
+  const [newspaperSearchQuery, setNewspaperSearchQuery] = useState('');
 
   // Modals & form states
   const [reviewModalSub, setReviewModalSub] = useState<Submission | null>(null);
@@ -190,6 +204,7 @@ export function AdminDashboardView({ user, onLogout, onNavigateHome }: AdminDash
         newsData,
         usersData,
         overridesData,
+        newspapersData,
       ] = await Promise.all([
         api.admin.getStats(),
         api.admin.getSubmissions(),
@@ -200,6 +215,7 @@ export function AdminDashboardView({ user, onLogout, onNavigateHome }: AdminDash
         api.admin.getNews(),
         api.admin.getUsers(),
         api.public.getJournalOverrides(),
+        api.admin.getNewspapers().catch(() => ({ success: false, newspapers: [] })),
       ]);
 
       if (statsData.success) setStats(statsData.stats);
@@ -211,6 +227,7 @@ export function AdminDashboardView({ user, onLogout, onNavigateHome }: AdminDash
       if (newsData.success) setNews(newsData.news);
       if (usersData.success) setUsers(usersData.users);
       if (overridesData.success) setOverrides(overridesData.overrides);
+      if (newspapersData && newspapersData.success) setNewspapers(newspapersData.newspapers || []);
     } catch (err) {
       console.error('Error loading admin portal data:', err);
       showToast('Failed to load some admin datasets.', 'error');
@@ -570,6 +587,90 @@ export function AdminDashboardView({ user, onLogout, onNavigateHome }: AdminDash
     setExpandedNewsCategories(new Set());
   };
 
+  // Newspapers Handlers
+  const handleSaveNewspaper = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newspaperTitle.trim()) {
+      showToast('Newspaper title is required', 'error');
+      return;
+    }
+    try {
+      let filePath = editingNewspaper?.file_path || '';
+      let fileSize = editingNewspaper?.file_size || '';
+
+      if (newspaperFile) {
+        const uploadRes = await api.admin.uploadResourceFile(newspaperFile);
+        if (uploadRes.success && uploadRes.file_path) {
+          filePath = uploadRes.file_path;
+          fileSize = `${(newspaperFile.size / (1024 * 1024)).toFixed(1)} MB`;
+        }
+      }
+
+      if (editingNewspaper) {
+        const res = await api.admin.updateNewspaper(editingNewspaper.id, {
+          title: newspaperTitle,
+          edition: newspaperEdition || 'Daily Edition',
+          date: newspaperDate || new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
+          publisher: newspaperPublisher,
+          summary: newspaperSummary,
+          url: newspaperUrl,
+          file_path: filePath,
+          file_size: fileSize || undefined,
+        });
+        if (res.success) showToast('Newspaper updated successfully.');
+      } else {
+        const res = await api.admin.createNewspaper({
+          title: newspaperTitle,
+          edition: newspaperEdition || 'Daily Edition',
+          date: newspaperDate || new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
+          publisher: newspaperPublisher,
+          summary: newspaperSummary,
+          url: newspaperUrl,
+          file_path: filePath,
+          file_size: fileSize || undefined,
+        });
+        if (res.success) showToast('Newspaper edition uploaded.');
+      }
+      setShowNewspaperModal(false);
+      setEditingNewspaper(null);
+      setNewspaperTitle('');
+      setNewspaperEdition('');
+      setNewspaperDate('');
+      setNewspaperPublisher('');
+      setNewspaperSummary('');
+      setNewspaperUrl('');
+      setNewspaperFile(null);
+      loadAllData();
+    } catch (err) {
+      showToast('Error saving newspaper', 'error');
+    }
+  };
+
+  const handleToggleNewspaperActive = async (item: DynamicNewspaper) => {
+    try {
+      const res = await api.admin.updateNewspaper(item.id, { is_active: !item.is_active });
+      if (res.success) {
+        showToast(item.is_active ? 'Newspaper deactivated.' : 'Newspaper activated.');
+        loadAllData();
+      }
+    } catch (err) {
+      showToast('Error updating newspaper status', 'error');
+    }
+  };
+
+  const handleDeleteNewspaper = async (id: string) => {
+    if (!window.confirm('Are you sure you want to delete this newspaper edition?')) return;
+    try {
+      const res = await api.admin.deleteNewspaper(id);
+      if (res.success) {
+        showToast('Newspaper removed.');
+        loadAllData();
+      }
+    } catch (err) {
+      showToast('Error removing newspaper', 'error');
+    }
+  };
+
   // E-Journal Catalog handlers
   const handleToggleJournalOverride = async (journalId: string, currentlyActive: boolean) => {
     const newActive = !currentlyActive;
@@ -822,6 +923,7 @@ export function AdminDashboardView({ user, onLogout, onNavigateHome }: AdminDash
     { id: 'articles', label: 'Published Articles', icon: Rocket, badge: articles.length || null, badgeColor: 'bg-emerald-600' },
     { id: 'links', label: 'Links & Resources', icon: Link2, badge: links.length || null, badgeColor: 'bg-stone-500' },
     { id: 'news', label: 'News & Bulletins', icon: Newspaper, badge: news.length || null, badgeColor: 'bg-purple-600' },
+    { id: 'newspapers', label: 'Newspapers Upload', icon: FileText, badge: newspapers.length || null, badgeColor: 'bg-amber-600' },
     { id: 'overrides', label: 'E-Journal Catalog', icon: GraduationCap, badge: TOTAL_JOURNAL_COUNT, badgeColor: 'bg-indigo-600' },
     { id: 'users', label: 'Users & Roles', icon: Users, badge: users.length || null, badgeColor: 'bg-stone-500' },
   ] as const;
@@ -1827,6 +1929,179 @@ export function AdminDashboardView({ user, onLogout, onNavigateHome }: AdminDash
       )}
 
       {/* ==================================================== */}
+      {/* TAB: NEWSPAPERS UPLOAD & MANAGEMENT */}
+      {/* ==================================================== */}
+      {activeTab === 'newspapers' && (
+        <div className="space-y-6">
+          <div className="rounded-xl border border-stone-200 bg-white p-6 shadow-sm space-y-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-stone-200 pb-4">
+              <div>
+                <h2 className="font-serif text-xl font-bold text-stone-900">
+                  Newspapers &amp; Daily Press Archives
+                </h2>
+                <p className="text-xs text-stone-500">
+                  Upload, archive, and manage daily national and regional Nigerian newspapers with publication dates and PDF downloads.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setEditingNewspaper(null);
+                  setNewspaperTitle('');
+                  setNewspaperEdition('');
+                  setNewspaperDate(new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }));
+                  setNewspaperPublisher('');
+                  setNewspaperSummary('');
+                  setNewspaperUrl('');
+                  setNewspaperFile(null);
+                  setShowNewspaperModal(true);
+                }}
+                className="flex items-center gap-1.5 rounded-md bg-[#14452F] px-3.5 py-2 text-xs font-semibold text-white hover:bg-[#0D3121] cursor-pointer shadow-xs shrink-0"
+              >
+                <Plus className="h-4 w-4" />
+                <span>+ Upload New Newspaper</span>
+              </button>
+            </div>
+
+            {/* Search and stats bar */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-1">
+              <div className="relative flex-1 max-w-md">
+                <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-stone-400" />
+                <input
+                  type="text"
+                  placeholder="Filter uploaded newspapers by title, date, or edition…"
+                  value={newspaperSearchQuery}
+                  onChange={(e) => setNewspaperSearchQuery(e.target.value)}
+                  className="w-full rounded-md border border-stone-300 pl-8.5 pr-3 py-1.5 text-xs text-stone-900 placeholder:text-stone-400 outline-none focus:border-[#14452F]"
+                />
+              </div>
+              <div className="text-xs text-stone-500 font-medium">
+                Total Editions: <strong className="text-stone-800">{newspapers.length}</strong>
+              </div>
+            </div>
+
+            {/* Newspapers list table */}
+            <div className="overflow-x-auto rounded-lg border border-stone-200">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-stone-50 text-stone-600 font-semibold border-b border-stone-200">
+                  <tr>
+                    <th className="p-3">Newspaper &amp; Edition</th>
+                    <th className="p-3">Publication Date</th>
+                    <th className="p-3">File / Link</th>
+                    <th className="p-3">Status</th>
+                    <th className="p-3 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-stone-100">
+                  {newspapers
+                    .filter((item) => {
+                      if (!newspaperSearchQuery.trim()) return true;
+                      const q = newspaperSearchQuery.toLowerCase();
+                      return (
+                        item.title.toLowerCase().includes(q) ||
+                        (item.edition && item.edition.toLowerCase().includes(q)) ||
+                        (item.date && item.date.toLowerCase().includes(q)) ||
+                        (item.publisher && item.publisher.toLowerCase().includes(q))
+                      );
+                    })
+                    .map((item) => {
+                      const fileUrl = item.file_path
+                        ? item.file_path.startsWith('/') || item.file_path.startsWith('http')
+                          ? item.file_path
+                          : `/uploads/resources/${item.file_path}`
+                        : item.url || '#';
+
+                      return (
+                        <tr key={item.id} className="hover:bg-stone-50/70 transition-colors">
+                          <td className="p-3">
+                            <div className="font-bold text-stone-900 text-sm">{item.title}</div>
+                            <div className="text-[11px] text-stone-500">{item.edition || 'Daily Edition'}</div>
+                            {item.summary && (
+                              <div className="text-[11px] text-stone-600 line-clamp-1 mt-0.5 max-w-md">
+                                {item.summary}
+                              </div>
+                            )}
+                          </td>
+                          <td className="p-3">
+                            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 font-medium text-[11px] border border-emerald-200">
+                              <FileText className="h-3 w-3 text-emerald-600" />
+                              {item.date}
+                            </span>
+                          </td>
+                          <td className="p-3">
+                            {item.file_path || item.url ? (
+                              <a
+                                href={fileUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 text-[#0B3B69] hover:underline font-medium text-[11px]"
+                              >
+                                <Download className="h-3 w-3" />
+                                <span>{item.file_path ? item.file_path.split('/').pop() : 'Web Link'}</span>
+                              </a>
+                            ) : (
+                              <span className="text-stone-400 italic text-[11px]">No file attached</span>
+                            )}
+                          </td>
+                          <td className="p-3">
+                            <button
+                              type="button"
+                              onClick={() => handleToggleNewspaperActive(item)}
+                              className={`text-[10px] font-bold px-2 py-0.5 rounded cursor-pointer transition-colors ${
+                                item.is_active
+                                  ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
+                                  : 'bg-red-100 text-red-800 hover:bg-red-200'
+                              }`}
+                            >
+                              {item.is_active ? 'Active' : 'Inactive'}
+                            </button>
+                          </td>
+                          <td className="p-3 text-right space-x-1.5">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditingNewspaper(item);
+                                setNewspaperTitle(item.title);
+                                setNewspaperEdition(item.edition || '');
+                                setNewspaperDate(item.date || '');
+                                setNewspaperPublisher(item.publisher || '');
+                                setNewspaperSummary(item.summary || '');
+                                setNewspaperUrl(item.url || '');
+                                setNewspaperFile(null);
+                                setShowNewspaperModal(true);
+                              }}
+                              className="p-1 rounded text-stone-600 hover:bg-stone-200 cursor-pointer"
+                              title="Edit Newspaper"
+                            >
+                              <Edit2 className="h-3.5 w-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteNewspaper(item.id)}
+                              className="p-1 rounded text-red-600 hover:bg-red-100 cursor-pointer"
+                              title="Delete Newspaper"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  {newspapers.length === 0 && (
+                    <tr>
+                      <td colSpan={5} className="p-8 text-center text-stone-400">
+                        No newspapers uploaded yet. Click <strong>+ Upload New Newspaper</strong> to add an issue.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ==================================================== */}
       {/* TAB 6: DYNAMIC NEWS & BULLETINS */}
       {/* ==================================================== */}
       {activeTab === 'news' && (
@@ -2144,6 +2419,179 @@ export function AdminDashboardView({ user, onLogout, onNavigateHome }: AdminDash
                     </div>
                   );
                 })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ==================================================== */}
+      {/* TAB: NEWSPAPERS UPLOAD & MANAGEMENT */}
+      {/* ==================================================== */}
+      {activeTab === 'newspapers' && (
+        <div className="space-y-6">
+          <div className="rounded-xl border border-stone-200 bg-white p-6 shadow-sm space-y-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-stone-200 pb-4">
+              <div>
+                <h2 className="font-serif text-xl font-bold text-stone-900">
+                  Newspapers &amp; Daily Press Archives
+                </h2>
+                <p className="text-xs text-stone-500">
+                  Upload, archive, and manage daily national and regional Nigerian newspapers with publication dates and PDF downloads.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setEditingNewspaper(null);
+                  setNewspaperTitle('');
+                  setNewspaperEdition('');
+                  setNewspaperDate(new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }));
+                  setNewspaperPublisher('');
+                  setNewspaperSummary('');
+                  setNewspaperUrl('');
+                  setNewspaperFile(null);
+                  setShowNewspaperModal(true);
+                }}
+                className="flex items-center gap-1.5 rounded-md bg-[#14452F] px-3.5 py-2 text-xs font-semibold text-white hover:bg-[#0D3121] cursor-pointer shadow-xs shrink-0"
+              >
+                <Plus className="h-4 w-4" />
+                <span>+ Upload New Newspaper</span>
+              </button>
+            </div>
+
+            {/* Search and stats bar */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-1">
+              <div className="relative flex-1 max-w-md">
+                <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-stone-400" />
+                <input
+                  type="text"
+                  placeholder="Filter uploaded newspapers by title, date, or edition…"
+                  value={newspaperSearchQuery}
+                  onChange={(e) => setNewspaperSearchQuery(e.target.value)}
+                  className="w-full rounded-md border border-stone-300 pl-8.5 pr-3 py-1.5 text-xs text-stone-900 placeholder:text-stone-400 outline-none focus:border-[#14452F]"
+                />
+              </div>
+              <div className="text-xs text-stone-500 font-medium">
+                Total Editions: <strong className="text-stone-800">{newspapers.length}</strong>
+              </div>
+            </div>
+
+            {/* Newspapers list table */}
+            <div className="overflow-x-auto rounded-lg border border-stone-200">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-stone-50 text-stone-600 font-semibold border-b border-stone-200">
+                  <tr>
+                    <th className="p-3">Newspaper &amp; Edition</th>
+                    <th className="p-3">Publication Date</th>
+                    <th className="p-3">File / Link</th>
+                    <th className="p-3">Status</th>
+                    <th className="p-3 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-stone-100">
+                  {newspapers
+                    .filter((item) => {
+                      if (!newspaperSearchQuery.trim()) return true;
+                      const q = newspaperSearchQuery.toLowerCase();
+                      return (
+                        item.title.toLowerCase().includes(q) ||
+                        (item.edition && item.edition.toLowerCase().includes(q)) ||
+                        (item.date && item.date.toLowerCase().includes(q)) ||
+                        (item.publisher && item.publisher.toLowerCase().includes(q))
+                      );
+                    })
+                    .map((item) => {
+                      const fileUrl = item.file_path
+                        ? item.file_path.startsWith('/') || item.file_path.startsWith('http')
+                          ? item.file_path
+                          : `/uploads/resources/${item.file_path}`
+                        : item.url || '#';
+
+                      return (
+                        <tr key={item.id} className="hover:bg-stone-50/70 transition-colors">
+                          <td className="p-3">
+                            <div className="font-bold text-stone-900 text-sm">{item.title}</div>
+                            <div className="text-[11px] text-stone-500">{item.edition || 'Daily Edition'}</div>
+                            {item.summary && (
+                              <div className="text-[11px] text-stone-600 line-clamp-1 mt-0.5 max-w-md">
+                                {item.summary}
+                              </div>
+                            )}
+                          </td>
+                          <td className="p-3">
+                            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 font-medium text-[11px] border border-emerald-200">
+                              <FileText className="h-3 w-3 text-emerald-600" />
+                              {item.date}
+                            </span>
+                          </td>
+                          <td className="p-3">
+                            {item.file_path || item.url ? (
+                              <a
+                                href={fileUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 text-[#0B3B69] hover:underline font-medium text-[11px]"
+                              >
+                                <Download className="h-3 w-3" />
+                                <span>{item.file_path ? item.file_path.split('/').pop() : 'Web Link'}</span>
+                              </a>
+                            ) : (
+                              <span className="text-stone-400 italic text-[11px]">No file attached</span>
+                            )}
+                          </td>
+                          <td className="p-3">
+                            <button
+                              type="button"
+                              onClick={() => handleToggleNewspaperActive(item)}
+                              className={`text-[10px] font-bold px-2 py-0.5 rounded cursor-pointer transition-colors ${
+                                item.is_active
+                                  ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
+                                  : 'bg-red-100 text-red-800 hover:bg-red-200'
+                              }`}
+                            >
+                              {item.is_active ? 'Active' : 'Inactive'}
+                            </button>
+                          </td>
+                          <td className="p-3 text-right space-x-1.5">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditingNewspaper(item);
+                                setNewspaperTitle(item.title);
+                                setNewspaperEdition(item.edition || '');
+                                setNewspaperDate(item.date || '');
+                                setNewspaperPublisher(item.publisher || '');
+                                setNewspaperSummary(item.summary || '');
+                                setNewspaperUrl(item.url || '');
+                                setNewspaperFile(null);
+                                setShowNewspaperModal(true);
+                              }}
+                              className="p-1 rounded text-stone-600 hover:bg-stone-200 cursor-pointer"
+                              title="Edit Newspaper"
+                            >
+                              <Edit2 className="h-3.5 w-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteNewspaper(item.id)}
+                              className="p-1 rounded text-red-600 hover:bg-red-100 cursor-pointer"
+                              title="Delete Newspaper"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  {newspapers.length === 0 && (
+                    <tr>
+                      <td colSpan={5} className="p-8 text-center text-stone-400">
+                        No newspapers uploaded yet. Click <strong>+ Upload New Newspaper</strong> to add an issue.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
@@ -2480,6 +2928,179 @@ export function AdminDashboardView({ user, onLogout, onNavigateHome }: AdminDash
                     </div>
                   );
                 })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ==================================================== */}
+      {/* TAB: NEWSPAPERS UPLOAD & MANAGEMENT */}
+      {/* ==================================================== */}
+      {activeTab === 'newspapers' && (
+        <div className="space-y-6">
+          <div className="rounded-xl border border-stone-200 bg-white p-6 shadow-sm space-y-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-stone-200 pb-4">
+              <div>
+                <h2 className="font-serif text-xl font-bold text-stone-900">
+                  Newspapers &amp; Daily Press Archives
+                </h2>
+                <p className="text-xs text-stone-500">
+                  Upload, archive, and manage daily national and regional Nigerian newspapers with publication dates and PDF downloads.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setEditingNewspaper(null);
+                  setNewspaperTitle('');
+                  setNewspaperEdition('');
+                  setNewspaperDate(new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }));
+                  setNewspaperPublisher('');
+                  setNewspaperSummary('');
+                  setNewspaperUrl('');
+                  setNewspaperFile(null);
+                  setShowNewspaperModal(true);
+                }}
+                className="flex items-center gap-1.5 rounded-md bg-[#14452F] px-3.5 py-2 text-xs font-semibold text-white hover:bg-[#0D3121] cursor-pointer shadow-xs shrink-0"
+              >
+                <Plus className="h-4 w-4" />
+                <span>+ Upload New Newspaper</span>
+              </button>
+            </div>
+
+            {/* Search and stats bar */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-1">
+              <div className="relative flex-1 max-w-md">
+                <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-stone-400" />
+                <input
+                  type="text"
+                  placeholder="Filter uploaded newspapers by title, date, or edition…"
+                  value={newspaperSearchQuery}
+                  onChange={(e) => setNewspaperSearchQuery(e.target.value)}
+                  className="w-full rounded-md border border-stone-300 pl-8.5 pr-3 py-1.5 text-xs text-stone-900 placeholder:text-stone-400 outline-none focus:border-[#14452F]"
+                />
+              </div>
+              <div className="text-xs text-stone-500 font-medium">
+                Total Editions: <strong className="text-stone-800">{newspapers.length}</strong>
+              </div>
+            </div>
+
+            {/* Newspapers list table */}
+            <div className="overflow-x-auto rounded-lg border border-stone-200">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-stone-50 text-stone-600 font-semibold border-b border-stone-200">
+                  <tr>
+                    <th className="p-3">Newspaper &amp; Edition</th>
+                    <th className="p-3">Publication Date</th>
+                    <th className="p-3">File / Link</th>
+                    <th className="p-3">Status</th>
+                    <th className="p-3 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-stone-100">
+                  {newspapers
+                    .filter((item) => {
+                      if (!newspaperSearchQuery.trim()) return true;
+                      const q = newspaperSearchQuery.toLowerCase();
+                      return (
+                        item.title.toLowerCase().includes(q) ||
+                        (item.edition && item.edition.toLowerCase().includes(q)) ||
+                        (item.date && item.date.toLowerCase().includes(q)) ||
+                        (item.publisher && item.publisher.toLowerCase().includes(q))
+                      );
+                    })
+                    .map((item) => {
+                      const fileUrl = item.file_path
+                        ? item.file_path.startsWith('/') || item.file_path.startsWith('http')
+                          ? item.file_path
+                          : `/uploads/resources/${item.file_path}`
+                        : item.url || '#';
+
+                      return (
+                        <tr key={item.id} className="hover:bg-stone-50/70 transition-colors">
+                          <td className="p-3">
+                            <div className="font-bold text-stone-900 text-sm">{item.title}</div>
+                            <div className="text-[11px] text-stone-500">{item.edition || 'Daily Edition'}</div>
+                            {item.summary && (
+                              <div className="text-[11px] text-stone-600 line-clamp-1 mt-0.5 max-w-md">
+                                {item.summary}
+                              </div>
+                            )}
+                          </td>
+                          <td className="p-3">
+                            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 font-medium text-[11px] border border-emerald-200">
+                              <FileText className="h-3 w-3 text-emerald-600" />
+                              {item.date}
+                            </span>
+                          </td>
+                          <td className="p-3">
+                            {item.file_path || item.url ? (
+                              <a
+                                href={fileUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 text-[#0B3B69] hover:underline font-medium text-[11px]"
+                              >
+                                <Download className="h-3 w-3" />
+                                <span>{item.file_path ? item.file_path.split('/').pop() : 'Web Link'}</span>
+                              </a>
+                            ) : (
+                              <span className="text-stone-400 italic text-[11px]">No file attached</span>
+                            )}
+                          </td>
+                          <td className="p-3">
+                            <button
+                              type="button"
+                              onClick={() => handleToggleNewspaperActive(item)}
+                              className={`text-[10px] font-bold px-2 py-0.5 rounded cursor-pointer transition-colors ${
+                                item.is_active
+                                  ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
+                                  : 'bg-red-100 text-red-800 hover:bg-red-200'
+                              }`}
+                            >
+                              {item.is_active ? 'Active' : 'Inactive'}
+                            </button>
+                          </td>
+                          <td className="p-3 text-right space-x-1.5">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditingNewspaper(item);
+                                setNewspaperTitle(item.title);
+                                setNewspaperEdition(item.edition || '');
+                                setNewspaperDate(item.date || '');
+                                setNewspaperPublisher(item.publisher || '');
+                                setNewspaperSummary(item.summary || '');
+                                setNewspaperUrl(item.url || '');
+                                setNewspaperFile(null);
+                                setShowNewspaperModal(true);
+                              }}
+                              className="p-1 rounded text-stone-600 hover:bg-stone-200 cursor-pointer"
+                              title="Edit Newspaper"
+                            >
+                              <Edit2 className="h-3.5 w-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteNewspaper(item.id)}
+                              className="p-1 rounded text-red-600 hover:bg-red-100 cursor-pointer"
+                              title="Delete Newspaper"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  {newspapers.length === 0 && (
+                    <tr>
+                      <td colSpan={5} className="p-8 text-center text-stone-400">
+                        No newspapers uploaded yet. Click <strong>+ Upload New Newspaper</strong> to add an issue.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
@@ -3240,6 +3861,162 @@ export function AdminDashboardView({ user, onLogout, onNavigateHome }: AdminDash
                   className="rounded bg-[#14452F] px-4 py-2 text-xs font-semibold text-white hover:bg-[#0D3121]"
                 >
                   {editingNews ? 'Update News' : 'Publish News Item'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Newspaper Upload & Edit Modal */}
+      {showNewspaperModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
+          <div className="w-full max-w-lg rounded-xl border border-stone-200 bg-white p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-stone-200 pb-3">
+              <div>
+                <h3 className="font-serif text-lg font-bold text-stone-900">
+                  {editingNewspaper ? 'Edit Newspaper Issue' : 'Upload Newspaper Edition'}
+                </h3>
+                <p className="text-xs text-stone-500">
+                  Daily press archive for university research and students.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowNewspaperModal(false)}
+                className="text-stone-400 hover:text-stone-600 p-1"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveNewspaper} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-stone-700 mb-1">
+                  Newspaper Title / Publication Name *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. The Guardian, Vanguard, The Punch, Daily Trust"
+                  value={newspaperTitle}
+                  onChange={(e) => setNewspaperTitle(e.target.value)}
+                  className="w-full rounded-md border border-stone-300 px-3 py-2 text-xs text-stone-900 outline-none focus:border-[#14452F]"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-stone-700 mb-1">
+                    Edition / Volume
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. National Daily · Vol. 42, No. 15,920"
+                    value={newspaperEdition}
+                    onChange={(e) => setNewspaperEdition(e.target.value)}
+                    className="w-full rounded-md border border-stone-300 px-3 py-2 text-xs text-stone-900 outline-none focus:border-[#14452F]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-stone-700 mb-1">
+                    Publication Date *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Monday, November 23, 2026"
+                    value={newspaperDate}
+                    onChange={(e) => setNewspaperDate(e.target.value)}
+                    className="w-full rounded-md border border-stone-300 px-3 py-2 text-xs text-stone-900 outline-none focus:border-[#14452F]"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-stone-700 mb-1">
+                  Publisher / Media Organization
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Guardian Newspapers Limited, Media Trust, Punch Nigeria"
+                  value={newspaperPublisher}
+                  onChange={(e) => setNewspaperPublisher(e.target.value)}
+                  className="w-full rounded-md border border-stone-300 px-3 py-2 text-xs text-stone-900 outline-none focus:border-[#14452F]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-stone-700 mb-1">
+                  Headline Summary / Cover Stories
+                </label>
+                <textarea
+                  rows={3}
+                  placeholder="Brief description of front page stories, academic news, economic policies, or editorial focus…"
+                  value={newspaperSummary}
+                  onChange={(e) => setNewspaperSummary(e.target.value)}
+                  className="w-full rounded-md border border-stone-300 px-3 py-2 text-xs text-stone-900 outline-none focus:border-[#14452F]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-stone-700 mb-1">
+                  Upload Newspaper PDF File
+                </label>
+                <input
+                  type="file"
+                  accept=".pdf,application/pdf"
+                  onChange={(e) => setNewspaperFile(e.target.files?.[0] || null)}
+                  className="w-full text-xs text-stone-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-emerald-50 file:text-emerald-800 hover:file:bg-emerald-100 cursor-pointer"
+                />
+
+                {newspaperFile && (
+                  <div className="mt-2 flex items-center gap-2 text-xs text-emerald-800 bg-emerald-50 border border-emerald-200 rounded px-2.5 py-1.5 font-medium">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                    <span className="truncate">Selected: {newspaperFile.name} ({(newspaperFile.size / (1024 * 1024)).toFixed(1)} MB)</span>
+                  </div>
+                )}
+
+                {editingNewspaper?.file_path && !newspaperFile && (
+                  <div className="mt-2 flex items-center gap-2 text-xs text-stone-700 bg-stone-100 border border-stone-200 rounded px-2.5 py-1.5">
+                    <FileText className="h-3.5 w-3.5 text-stone-500 shrink-0" />
+                    <span className="truncate">Current attached file: {editingNewspaper.file_path.split('/').pop()}</span>
+                    <span className="text-[10px] text-stone-400">(Choose a new file to replace)</span>
+                  </div>
+                )}
+
+                <p className="text-[11px] text-stone-500 mt-1.5">
+                  The uploaded PDF will be available for direct download via the green <strong>Download PDF</strong> button on the separate Newspapers page.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-stone-700 mb-1">
+                  External Reading / E-Paper URL (Optional)
+                </label>
+                <input
+                  type="url"
+                  placeholder="https://..."
+                  value={newspaperUrl}
+                  onChange={(e) => setNewspaperUrl(e.target.value)}
+                  className="w-full rounded-md border border-stone-300 px-3 py-2 text-xs text-stone-900 outline-none focus:border-[#14452F]"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-2 border-t border-stone-200">
+                <button
+                  type="button"
+                  onClick={() => setShowNewspaperModal(false)}
+                  className="rounded border border-stone-300 px-3.5 py-2 text-xs font-medium text-stone-700 hover:bg-stone-50 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="rounded bg-[#14452F] px-4 py-2 text-xs font-semibold text-white hover:bg-[#0D3121] cursor-pointer shadow-xs"
+                >
+                  {editingNewspaper ? 'Update Newspaper' : 'Upload & Publish'}
                 </button>
               </div>
             </form>
