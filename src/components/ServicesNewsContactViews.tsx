@@ -278,8 +278,8 @@ export function NewsEventsView({ onOpenJournals: _onOpenJournals }: { onOpenJour
     <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-10 py-8 space-y-8 animate-fade-in">
       {/* Header with Title and Live Updates Banner */}
       <RevealOnLoad delay={0}>
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-stone-200 pb-6">
-          <div className="space-y-2 max-w-2xl">
+        <div className="flex flex-col items-center text-center border-b border-stone-200 pb-8 space-y-4">
+          <div className="space-y-3 max-w-3xl mx-auto flex flex-col items-center">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
@@ -292,10 +292,10 @@ export function NewsEventsView({ onOpenJournals: _onOpenJournals }: { onOpenJour
               </span>
             </div>
 
-            <h1 className="font-serif text-3xl sm:text-4xl font-semibold tracking-tight text-[#1C1917] [text-wrap:balance]">
+            <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight text-[#1C1917] [text-wrap:balance]">
               Library News, Circulars &amp; Events
             </h1>
-            <p className="text-sm sm:text-base text-stone-600 leading-relaxed">
+            <p className="text-sm sm:text-base text-stone-600 leading-relaxed max-w-2xl mx-auto">
               Administrative circulars, university weekly bulletins, symposiums, ZOOM research conferences,
               and digital orientation schedules for Niger Delta University students, researchers, and faculty.
             </p>
@@ -305,7 +305,7 @@ export function NewsEventsView({ onOpenJournals: _onOpenJournals }: { onOpenJour
             type="button"
             onClick={() => fetchNews()}
             disabled={isRefreshing}
-            className="inline-flex items-center gap-2 rounded-lg border border-stone-300 bg-white px-3.5 py-2 text-xs font-semibold text-stone-700 hover:bg-stone-50 active:scale-98 transition-all cursor-pointer self-start md:self-auto shadow-xs shrink-0"
+            className="inline-flex items-center gap-2 rounded-lg border border-stone-300 bg-white px-3.5 py-2 text-xs font-semibold text-stone-700 hover:bg-stone-50 active:scale-98 transition-all cursor-pointer shadow-xs"
             title="Refresh latest announcements"
           >
             <RefreshCw className={`h-3.5 w-3.5 text-stone-500 ${isRefreshing ? 'animate-spin' : ''}`} />

@@ -355,11 +355,6 @@ export function HeaderNav({
               className={`${navLinkClass(activePage === 'news')} cursor-pointer relative inline-flex items-center gap-1.5`}
             >
               News
-              {liveNewsCount > 0 && activePage !== 'news' && (
-                <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold leading-none shadow-sm">
-                  {liveNewsCount}
-                </span>
-              )}
               {activePage === 'news' && <ActiveUnderline />}
             </button>
 
@@ -563,12 +558,6 @@ export function HeaderNav({
                       }`}
                     >
                       <span>{label}</span>
-                      {page === 'news' && liveNewsCount > 0 && activePage !== 'news' && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-500 text-white text-[10px] font-bold">
-                          <Bell className="h-2.5 w-2.5" />
-                          {liveNewsCount} live
-                        </span>
-                      )}
                     </button>
                   ))}
 
