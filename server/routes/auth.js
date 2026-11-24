@@ -40,21 +40,35 @@ router.post('/register', async (req, res) => {
       email: normalizedEmail,
       password: hashedPassword,
       role: 'researcher',
+      status: 'pending',
     });
 
-    // Create welcome notification
-    await db.notifications.create({
-      user_id: newUser.id,
-      message: `Welcome to Niger Delta University Library, ${newUser.full_name}! You can now submit manuscripts and track peer reviews online.`,
-    });
+    // Send high-priority notification to all administrators
+    try {
+      const allUsers = (await db.users.list()) || [];
+      const admins = allUsers.filter((u) => u.role === 'admin');
+      for (const admin of admins) {
+        await db.notifications.create({
+          user_id: admin.id,
+          message: `New Researcher Registration: "${newUser.full_name}" (${newUser.email}) registered and is awaiting admin verification.`,
+        });
+      }
+    } catch (notifErr) {
+      console.warn('[AUTH] Could not send admin notification:', notifErr);
+    }
 
-    const token = generateToken(newUser);
-
+    // Do NOT generate a login token. User must be approved by admin first.
     res.status(201).json({
       success: true,
-      message: 'Registration successful! You are now signed in.',
-      token,
-      user: newUser,
+      pendingVerification: true,
+      message: 'Account created! Waiting for admin verification.',
+      user: {
+        id: newUser.id,
+        full_name: newUser.full_name,
+        email: newUser.email,
+        role: newUser.role,
+        status: 'pending',
+      },
     });
   } catch (err) {
     console.error('[AUTH REGISTER ERROR]', err);
@@ -97,6 +111,14 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({
         success: false,
         message: 'Invalid email or password.',
+      });
+    }
+
+    if (user.status === 'pending' || user.status === 'pending_verification') {
+      return res.status(403).json({
+        success: false,
+        isPendingVerification: true,
+        message: 'Account created, waiting for admin verification. Please wait for an administrator to approve your account before signing in.',
       });
     }
 

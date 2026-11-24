@@ -10,7 +10,7 @@ export interface User {
   full_name: string;
   email: string;
   role: 'admin' | 'researcher' | 'editor';
-  status: 'active' | 'suspended';
+  status: 'active' | 'suspended' | 'pending';
   created_at: string;
 }
 
@@ -604,6 +604,22 @@ export const api = {
         method: 'PUT',
         headers: getAuthHeaders(),
         body: JSON.stringify(updates),
+      });
+      return res.json();
+    },
+
+    async verifyUser(id: string): Promise<{ success: boolean; message: string; user: User }> {
+      const res = await fetch(`${API_BASE}/api/admin/users/${id}/verify`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+      });
+      return res.json();
+    },
+
+    async deleteUser(id: string): Promise<{ success: boolean; message: string }> {
+      const res = await fetch(`${API_BASE}/api/admin/users/${id}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders(),
       });
       return res.json();
     },

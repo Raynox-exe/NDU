@@ -29,6 +29,7 @@ import {
   ChevronDown,
   GraduationCap,
   Filter,
+  Clock,
 } from 'lucide-react';
 import {
   api,
@@ -910,6 +911,8 @@ export function AdminDashboardView({ user, onLogout, onNavigateHome }: AdminDash
   }, [news]);
 
   // Nav items config
+  const pendingUsersCount = users.filter((u) => u.status === 'pending').length;
+
   const navItems = [
     { id: 'overview', label: 'Overview & Stats', icon: LayoutDashboard, badge: null },
     {
@@ -925,7 +928,13 @@ export function AdminDashboardView({ user, onLogout, onNavigateHome }: AdminDash
     { id: 'news', label: 'News & Bulletins', icon: Newspaper, badge: news.length || null, badgeColor: 'bg-purple-600' },
     { id: 'newspapers', label: 'Newspapers Upload', icon: FileText, badge: newspapers.length || null, badgeColor: 'bg-amber-600' },
     { id: 'overrides', label: 'E-Journal Catalog', icon: GraduationCap, badge: TOTAL_JOURNAL_COUNT, badgeColor: 'bg-indigo-600' },
-    { id: 'users', label: 'Users & Roles', icon: Users, badge: users.length || null, badgeColor: 'bg-stone-500' },
+    {
+      id: 'users',
+      label: 'Users & Roles',
+      icon: Users,
+      badge: pendingUsersCount > 0 ? pendingUsersCount : users.length || null,
+      badgeColor: pendingUsersCount > 0 ? 'bg-amber-600' : 'bg-stone-500',
+    },
   ] as const;
 
   const activeNavItem = navItems.find((n) => n.id === activeTab);
@@ -1063,6 +1072,32 @@ export function AdminDashboardView({ user, onLogout, onNavigateHome }: AdminDash
       {/* ==================================================== */}
       {activeTab === 'overview' && stats && (
         <div className="space-y-6">
+          {pendingUsersCount > 0 && (
+            <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs animate-fade-in">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-lg bg-amber-100 border border-amber-300 flex items-center justify-center text-amber-800 shrink-0">
+                  <Clock className="h-5 w-5 animate-pulse" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-amber-950 text-sm">
+                    {pendingUsersCount} New Researcher Registration{pendingUsersCount > 1 ? 's' : ''} Awaiting Admin Verification
+                  </h3>
+                  <p className="text-xs text-amber-800/80">
+                    Newly registered researchers cannot sign in or submit manuscripts until approved from the Users &amp; Roles tab.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveTab('users')}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-amber-700 hover:bg-amber-800 text-white px-4 py-2 text-xs font-semibold shadow-xs transition-colors shrink-0 cursor-pointer"
+              >
+                <span>Review &amp; Verify Users</span>
+                <ChevronRight className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="rounded-xl border border-stone-200 bg-white p-5 shadow-sm space-y-1 border-l-4 border-l-[#14452F]">
               <span className="text-xs font-semibold text-stone-500 uppercase tracking-wider">
@@ -3111,13 +3146,22 @@ export function AdminDashboardView({ user, onLogout, onNavigateHome }: AdminDash
       {/* ==================================================== */}
       {activeTab === 'users' && (
         <div className="rounded-xl border border-stone-200 bg-white overflow-hidden shadow-sm space-y-4 p-6">
-          <div className="border-b border-stone-200 pb-4">
-            <h2 className="font-serif text-xl font-bold text-stone-900">
-              Registered Portal Users &amp; Roles
-            </h2>
-            <p className="text-xs text-stone-500">
-              Manage permissions, researcher accounts, and administrative staff.
-            </p>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-stone-200 pb-4">
+            <div>
+              <h2 className="font-serif text-xl font-bold text-stone-900">
+                Registered Portal Users &amp; Roles
+              </h2>
+              <p className="text-xs text-stone-500">
+                Verify new researcher registrations, manage permissions, and supervise account statuses.
+              </p>
+            </div>
+
+            {pendingUsersCount > 0 && (
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-50 border border-amber-300 text-amber-900 text-xs font-semibold">
+                <Clock className="h-4 w-4 text-amber-600 animate-pulse" />
+                <span>{pendingUsersCount} Awaiting Verification</span>
+              </div>
+            )}
           </div>
 
           <div className="overflow-x-auto">
@@ -3132,45 +3176,136 @@ export function AdminDashboardView({ user, onLogout, onNavigateHome }: AdminDash
                 </tr>
               </thead>
               <tbody className="divide-y divide-stone-100">
-                {users.map((u) => (
-                  <tr key={u.id} className="hover:bg-stone-50/60">
-                    <td className="py-4 px-4 font-semibold text-stone-900">
-                      <div>{u.full_name}</div>
-                      <div className="text-[11px] text-stone-500 font-normal">{u.email}</div>
-                    </td>
-                    <td className="py-4 px-4">
-                      <span className="rounded bg-blue-100 text-blue-800 px-2 py-0.5 text-[11px] font-semibold uppercase">
-                        {u.role}
-                      </span>
-                    </td>
-                    <td className="py-4 px-4">
-                      <span
-                        className={`font-semibold text-[11px] ${
-                          u.status === 'active' ? 'text-emerald-700' : 'text-red-700'
-                        }`}
-                      >
-                        ● {u.status}
-                      </span>
-                    </td>
-                    <td className="py-4 px-4 text-stone-500">
-                      {new Date(u.created_at).toLocaleDateString()}
-                    </td>
-                    <td className="py-4 px-4">
-                      <button
-                        type="button"
-                        onClick={async () => {
-                          const newStatus = u.status === 'active' ? 'suspended' : 'active';
-                          await api.admin.updateUser(u.id, { status: newStatus });
-                          showToast(`User status set to ${newStatus}`);
-                          loadAllData();
-                        }}
-                        className="text-xs text-[#0B3B69] font-semibold hover:underline cursor-pointer"
-                      >
-                        {u.status === 'active' ? 'Suspend Account' : 'Activate Account'}
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                {users.map((u) => {
+                  const isPending = u.status === 'pending';
+                  const isActive = u.status === 'active';
+
+                  return (
+                    <tr
+                      key={u.id}
+                      className={`hover:bg-stone-50/60 transition-colors ${
+                        isPending ? 'bg-amber-50/40' : ''
+                      }`}
+                    >
+                      <td className="py-4 px-4 font-semibold text-stone-900">
+                        <div className="flex items-center gap-2">
+                          <span>{u.full_name}</span>
+                          {isPending && (
+                            <span className="text-[10px] bg-amber-200 text-amber-900 px-1.5 py-0.2 rounded font-bold uppercase">
+                              New
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-[11px] text-stone-500 font-normal">{u.email}</div>
+                      </td>
+                      <td className="py-4 px-4">
+                        <span
+                          className={`rounded px-2 py-0.5 text-[11px] font-semibold uppercase ${
+                            u.role === 'admin'
+                              ? 'bg-purple-100 text-purple-800'
+                              : 'bg-blue-100 text-blue-800'
+                          }`}
+                        >
+                          {u.role}
+                        </span>
+                      </td>
+                      <td className="py-4 px-4">
+                        {isPending ? (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 text-amber-800 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider">
+                            <Clock className="h-3 w-3 text-amber-600 animate-pulse" />
+                            <span>Pending Verification</span>
+                          </span>
+                        ) : isActive ? (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 text-emerald-800 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider">
+                            <CheckCircle2 className="h-3 w-3 text-emerald-600" />
+                            <span>Verified / Active</span>
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-red-100 text-red-800 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider">
+                            <XCircle className="h-3 w-3 text-red-600" />
+                            <span>Suspended</span>
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-4 px-4 text-stone-500">
+                        {new Date(u.created_at).toLocaleDateString()}
+                      </td>
+                      <td className="py-4 px-4">
+                        {isPending ? (
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                const res = await api.admin.verifyUser(u.id);
+                                if (res.success) {
+                                  showToast(`Researcher "${u.full_name}" verified successfully!`, 'success');
+                                  loadAllData();
+                                } else {
+                                  showToast(res.message || 'Verification failed.', 'error');
+                                }
+                              }}
+                              className="inline-flex items-center gap-1.5 rounded-md bg-emerald-700 hover:bg-emerald-800 text-white px-3 py-1.5 text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                              title="Verify researcher account and enable login"
+                            >
+                              <CheckCircle2 className="h-3.5 w-3.5" />
+                              <span>Approve &amp; Verify</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                if (confirm(`Reject and delete registration for ${u.full_name}?`)) {
+                                  await api.admin.deleteUser(u.id);
+                                  showToast(`Registration for ${u.full_name} rejected.`);
+                                  loadAllData();
+                                }
+                              }}
+                              className="inline-flex items-center gap-1 rounded-md border border-stone-200 text-red-600 hover:bg-red-50 px-2.5 py-1.5 text-xs font-medium transition-colors cursor-pointer"
+                              title="Reject registration"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                              <span>Reject</span>
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-3">
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                const newStatus = isActive ? 'suspended' : 'active';
+                                await api.admin.updateUser(u.id, { status: newStatus });
+                                showToast(`User status set to ${newStatus}`);
+                                loadAllData();
+                              }}
+                              className={`text-xs font-semibold hover:underline cursor-pointer ${
+                                isActive ? 'text-red-700' : 'text-emerald-700'
+                              }`}
+                            >
+                              {isActive ? 'Suspend Account' : 'Reactivate Account'}
+                            </button>
+
+                            {u.role !== 'admin' && (
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  if (confirm(`Are you sure you want to delete user ${u.full_name}?`)) {
+                                    await api.admin.deleteUser(u.id);
+                                    showToast(`User ${u.full_name} deleted.`);
+                                    loadAllData();
+                                  }
+                                }}
+                                className="text-stone-400 hover:text-red-600 transition-colors cursor-pointer"
+                                title="Delete user"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

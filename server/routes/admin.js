@@ -549,6 +549,45 @@ router.put('/users/:id', async (req, res) => {
   }
 });
 
+router.post('/users/:id/verify', async (req, res) => {
+  try {
+    const user = await db.users.findById(req.params.id);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found.' });
+
+    const updated = await db.users.update(req.params.id, { status: 'active' });
+
+    // Notify the user that their account is verified
+    try {
+      await db.notifications.create({
+        user_id: user.id,
+        message: `Your researcher account has been approved and verified by the Library Administrator! You can now log in and submit research manuscripts.`,
+      });
+    } catch (notifErr) {
+      console.warn('[ADMIN] Could not create verification notification:', notifErr);
+    }
+
+    res.json({
+      success: true,
+      message: `User ${user.full_name} has been verified and approved.`,
+      user: updated,
+    });
+  } catch (err) {
+    console.error('[ADMIN VERIFY USER ERROR]', err);
+    res.status(500).json({ success: false, message: 'Server error verifying user.' });
+  }
+});
+
+router.delete('/users/:id', async (req, res) => {
+  try {
+    const success = await db.users.delete(req.params.id);
+    if (!success) return res.status(404).json({ success: false, message: 'User not found.' });
+    res.json({ success: true, message: 'User account removed.' });
+  } catch (err) {
+    console.error('[ADMIN DELETE USER ERROR]', err);
+    res.status(500).json({ success: false, message: 'Server error deleting user.' });
+  }
+});
+
 // ==========================================
 // 10. NEWSPAPERS UPLOAD & MANAGEMENT
 // ==========================================

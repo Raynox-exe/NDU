@@ -790,6 +790,14 @@ export const db = {
       const { password, ...safeUser } = data.users[index];
       return safeUser;
     },
+    delete(id) {
+      const data = loadDb();
+      const index = data.users.findIndex((u) => String(u.id) === String(id));
+      if (index === -1) return false;
+      data.users.splice(index, 1);
+      saveDb();
+      return true;
+    },
   },
 
   // Submissions (Journal transmission pipeline)
