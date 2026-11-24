@@ -76,12 +76,12 @@ export function HomeAboutView({
     .filter((d): d is DatabaseResource => Boolean(d));
 
   const handleQuickLink = (item: DatabaseResource) => {
-    if (item.username || item.password) {
-      onSelectDatabase(item);
-      return;
-    }
     if (item.url) {
       window.open(item.url, '_blank', 'noopener,noreferrer');
+      return;
+    }
+    if (item.internalRoute === 'newspapers') {
+      onNavigate('newspapers');
       return;
     }
     if (item.internalRoute === 'journals') {
@@ -96,11 +96,6 @@ export function HomeAboutView({
       onNavigate('services');
       return;
     }
-    if (item.internalRoute === 'newspapers') {
-      onNavigate('newspapers');
-      return;
-    }
-    onSelectDatabase(item);
   };
 
   return (
@@ -124,10 +119,7 @@ export function HomeAboutView({
 
             <ul className="divide-y divide-stone-100">
               {quickLinks.map((link) => {
-                const hasCredentials = Boolean(link.username || link.password);
-                const isDirectExternal = Boolean(link.url) && !hasCredentials;
-
-                if (isDirectExternal && link.url) {
+                if (link.url) {
                   return (
                     <li key={link.id}>
                       <a
@@ -156,11 +148,7 @@ export function HomeAboutView({
                         {link.name}
                       </span>
                       <div className="flex items-center gap-1.5 shrink-0">
-                        {link.url ? (
-                          <ExternalLink className="h-3.5 w-3.5 text-stone-400 group-hover:text-[#14452F] group-hover:translate-x-0.5 transition-all" />
-                        ) : (
-                          <ChevronRight className="h-3.5 w-3.5 text-stone-400 group-hover:text-[#14452F] group-hover:translate-x-0.5 transition-all" />
-                        )}
+                        <ChevronRight className="h-3.5 w-3.5 text-stone-400 group-hover:text-[#14452F] group-hover:translate-x-0.5 transition-all" />
                       </div>
                     </button>
                   </li>

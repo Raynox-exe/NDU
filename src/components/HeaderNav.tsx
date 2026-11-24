@@ -197,16 +197,25 @@ export function HeaderNav({
       <header className="sticky top-0 z-40 border-b border-stone-200 bg-[#FBF9F5]/95 backdrop-blur-sm">
         <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-4 xl:gap-6 px-4 sm:px-6 lg:px-8 xl:px-10 h-16">
           {/* Zone 1: Single-line Brand Title */}
-          <button
-            type="button"
-            onClick={() => handleNavClick('home')}
-            className="flex items-center gap-3 text-left whitespace-nowrap shrink-0 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0B3B69]"
-          >
-            <NduCrest className="h-10 w-auto shrink-0" />
-            <span className="font-sans text-xl font-bold tracking-tight text-[#14452F] whitespace-nowrap shrink-0">
+          <div className="flex items-center gap-3 text-left whitespace-nowrap shrink-0">
+            <button
+              type="button"
+              onClick={() => handleNavClick('home')}
+              title="NDU Library Home"
+              className="cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0B3B69]"
+            >
+              <NduCrest className="h-10 w-auto shrink-0 hover:opacity-90 transition-opacity" />
+            </button>
+            <a
+              href="https://www.ndu.edu.ng"
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Niger Delta University Main Website (www.ndu.edu.ng)"
+              className="font-sans text-xl font-bold tracking-tight text-[#14452F] hover:text-[#0B3B69] hover:underline transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+            >
               NDU Library
-            </span>
-          </button>
+            </a>
+          </div>
 
           {/* Zone 2: Navigation Links */}
           <nav

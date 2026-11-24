@@ -350,7 +350,7 @@ export const DATABASE_RESOURCES: DatabaseResource[] = [
     group: 'NDU Digital Collections',
     description: 'Institutional digital archive for NDU theses, dissertations, inaugural lectures, and scholarly outputs.',
     accessNote: 'Institutional Archive',
-    internalRoute: 'services',
+    url: 'http://repository.ndu.edu.ng/',
   },
   {
     id: 'ndu-journals',

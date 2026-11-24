@@ -689,23 +689,6 @@ interface DatabaseModalProps {
 }
 
 export function DatabaseModal({ database, onClose }: DatabaseModalProps) {
-  const [copiedUser, setCopiedUser] = useState(false);
-  const [copiedPass, setCopiedPass] = useState(false);
-  // Default masked (hidden) — user clicks eye to reveal
-  const [showUser, setShowUser] = useState(false);
-  const [showPass, setShowPass] = useState(false);
-
-  const copyToClipboard = (text: string, type: 'user' | 'pass') => {
-    navigator.clipboard.writeText(text);
-    if (type === 'user') {
-      setCopiedUser(true);
-      setTimeout(() => setCopiedUser(false), 2000);
-    } else {
-      setCopiedPass(true);
-      setTimeout(() => setCopiedPass(false), 2000);
-    }
-  };
-
   return (
     <AnimatePresence>
       {database && (

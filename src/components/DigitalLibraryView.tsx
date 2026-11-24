@@ -330,10 +330,6 @@ export function DigitalLibraryView({
   };
 
   const handleDatabaseClick = (db: DatabaseResource) => {
-    if (db.username || db.password) {
-      onSelectDatabase(db);
-      return;
-    }
     if (db.url) {
       window.open(db.url, '_blank', 'noopener,noreferrer');
       return;
@@ -381,8 +377,7 @@ export function DigitalLibraryView({
 
             <ul className="divide-y divide-stone-100">
               {(dynamicDatabases.length > 0 ? dynamicDatabases : DATABASE_RESOURCES).map((db: any) => {
-                const hasCredentials = Boolean(db.username || db.password);
-                const isDirectExternal = Boolean(db.url) && !hasCredentials;
+                const isDirectExternal = Boolean(db.url);
 
                 if (isDirectExternal && db.url) {
                   return (
