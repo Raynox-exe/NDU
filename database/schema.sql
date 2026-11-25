@@ -138,3 +138,16 @@ CREATE INDEX IF NOT EXISTS idx_links_section      ON links(section_id);
 CREATE INDEX IF NOT EXISTS idx_news_created       ON news(created_at);
 CREATE INDEX IF NOT EXISTS idx_submissions_user   ON submissions(user_id);
 CREATE INDEX IF NOT EXISTS idx_submissions_status ON submissions(status);
+
+-- ─── AUDIT LOGS ───────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS audit_logs (
+  id          VARCHAR(64)  NOT NULL PRIMARY KEY,
+  admin_id    VARCHAR(64)  NOT NULL,
+  admin_name  VARCHAR(255) NOT NULL DEFAULT 'Administrator',
+  action      VARCHAR(255) NOT NULL,
+  details     TEXT         DEFAULT NULL,
+  created_at  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE INDEX IF NOT EXISTS idx_audit_logs_admin    ON audit_logs(admin_id);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_created  ON audit_logs(created_at);

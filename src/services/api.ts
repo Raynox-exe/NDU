@@ -130,6 +130,15 @@ export interface DynamicNewspaper {
   created_at: string;
 }
 
+export interface AuditLog {
+  id: string;
+  admin_id: string;
+  admin_name: string;
+  action: string;
+  details?: string;
+  created_at: string;
+}
+
 function getAuthHeaders(): HeadersInit {
   const token = localStorage.getItem('ndu_token');
   const headers: HeadersInit = {
@@ -618,6 +627,20 @@ export const api = {
 
     async deleteUser(id: string): Promise<{ success: boolean; message: string }> {
       const res = await fetch(`${API_BASE}/api/admin/users/${id}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders(),
+      });
+      return res.json();
+    },
+
+    // Audit Logs
+    async getAuditLogs(): Promise<{ success: boolean; logs: AuditLog[] }> {
+      const res = await fetch(`${API_BASE}/api/admin/audit-logs`, { headers: getAuthHeaders() });
+      return res.json();
+    },
+
+    async clearAuditLogs(): Promise<{ success: boolean; message: string }> {
+      const res = await fetch(`${API_BASE}/api/admin/audit-logs`, {
         method: 'DELETE',
         headers: getAuthHeaders(),
       });

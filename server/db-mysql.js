@@ -458,6 +458,51 @@ export const journalOverrides = {
   },
 };
 
+// ═══════════════════════════════════════════════════════════════
+// AUDIT LOGS
+// ═══════════════════════════════════════════════════════════════
+let auditTableEnsured = false;
+async function ensureAuditTable() {
+  if (auditTableEnsured) return;
+  try {
+    await q(`CREATE TABLE IF NOT EXISTS audit_logs (
+      id VARCHAR(64) NOT NULL PRIMARY KEY,
+      admin_id VARCHAR(64) NOT NULL,
+      admin_name VARCHAR(255) NOT NULL DEFAULT 'Administrator',
+      action VARCHAR(255) NOT NULL,
+      details TEXT DEFAULT NULL,
+      created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+    auditTableEnsured = true;
+  } catch (e) {
+    console.warn('[DB-MYSQL] Warning ensuring audit_logs table:', e.message);
+  }
+}
+
+export const auditLogs = {
+  async list(limit = 100) {
+    await ensureAuditTable();
+    return q(
+      'SELECT * FROM audit_logs ORDER BY created_at DESC LIMIT ?',
+      [Number(limit) || 100]
+    );
+  },
+  async create({ admin_id, admin_name, action, details }) {
+    await ensureAuditTable();
+    const id = `al-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
+    await q(
+      'INSERT INTO audit_logs (id, admin_id, admin_name, action, details, created_at) VALUES (?, ?, ?, ?, ?, NOW())',
+      [id, admin_id || 'unknown', admin_name || 'Administrator', action || '', details || '']
+    );
+    return { id, admin_id, admin_name, action, details, created_at: new Date().toISOString() };
+  },
+  async clear() {
+    await ensureAuditTable();
+    await q('DELETE FROM audit_logs');
+    return true;
+  },
+};
+
 // ── Default export (matches shape of server/db.js) ────────────
 export const db = {
   users,
@@ -469,6 +514,7 @@ export const db = {
   news,
   notifications,
   journalOverrides,
+  auditLogs,
 };
 
 export default db;

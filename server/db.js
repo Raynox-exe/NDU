@@ -696,6 +696,7 @@ function getInitialData() {
         created_at: new Date('2026-11-15T11:00:00Z').toISOString(),
       },
     ],
+    audit_logs: [],
     newspapers: [
       {
         id: 'news-thisday-2026-11-21',
@@ -1217,6 +1218,38 @@ export const db = {
         return true;
       }
       return false;
+    },
+  },
+
+  // Audit Logs — record every successful admin action
+  auditLogs: {
+    list(limit = 100) {
+      const data = loadDb();
+      const logs = data.audit_logs || [];
+      return logs.slice().sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, limit);
+    },
+    create({ admin_id, admin_name, action, details }) {
+      const data = loadDb();
+      if (!data.audit_logs) data.audit_logs = [];
+      const entry = {
+        id: `al-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+        admin_id: admin_id || 'unknown',
+        admin_name: admin_name || 'Administrator',
+        action: action || '',
+        details: details || '',
+        created_at: new Date().toISOString(),
+      };
+      data.audit_logs.unshift(entry);
+      // Keep only latest 500 entries to avoid bloat
+      if (data.audit_logs.length > 500) data.audit_logs = data.audit_logs.slice(0, 500);
+      saveDb();
+      return entry;
+    },
+    clear() {
+      const data = loadDb();
+      data.audit_logs = [];
+      saveDb();
+      return true;
     },
   },
 };

@@ -17,6 +17,8 @@ edited_files = [
     'src/data/newspapersData.ts',
     'src/services/api.ts',
     'server/db.js',
+    'server/db-mysql.js',
+    'database/schema.sql',
     'server/routes/admin.js',
     'server/routes/public.js',
     'public/uploads/resources/thisday_nov_21_2026.pdf',

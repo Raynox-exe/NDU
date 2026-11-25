@@ -14,6 +14,22 @@ const router = express.Router();
 // Apply admin guard to all routes
 router.use(requireAdmin);
 
+// ── Audit log helper ──────────────────────────────────────────
+async function logAudit(req, action, details = '') {
+  try {
+    if (db.auditLogs && db.auditLogs.create) {
+      await db.auditLogs.create({
+        admin_id:   req.user?.id   || 'unknown',
+        admin_name: req.user?.full_name || 'Administrator',
+        action,
+        details,
+      });
+    }
+  } catch (e) {
+    console.warn('[AUDIT] Could not write audit log entry:', e.message);
+  }
+}
+
 const UPLOADS_RESOURCES_DIR = path.resolve(__dirname, '..', '..', 'public', 'uploads', 'resources');
 const UPLOADS_PUBLISHED_DIR = path.resolve(__dirname, '..', '..', 'public', 'uploads', 'published');
 const UPLOADS_MANUSCRIPTS_DIR = path.resolve(__dirname, '..', '..', 'public', 'uploads', 'manuscripts');
@@ -113,6 +129,8 @@ router.post('/submissions/:id/review', async (req, res) => {
       message: notifMsg,
     });
 
+    await logAudit(req, `Submission ${newStatus.toUpperCase()}`, `"${submission.title}" — ${newStatus}`);
+
     res.json({
       success: true,
       message: `Submission marked as ${newStatus} and researcher notified.`,
@@ -152,6 +170,7 @@ router.post('/journals', async (req, res) => {
       status: status || 'draft',
       is_visible: true,
     });
+    await logAudit(req, 'Created Journal Issue', newJournal.name);
     res.status(201).json({ success: true, message: 'Journal issue created.', journal: newJournal });
   } catch (err) {
     console.error(err);
@@ -163,6 +182,7 @@ router.put('/journals/:id', async (req, res) => {
   try {
     const updated = await db.journals.update(req.params.id, req.body);
     if (!updated) return res.status(404).json({ success: false, message: 'Journal issue not found.' });
+    await logAudit(req, 'Updated Journal Issue', updated.name);
     res.json({ success: true, message: 'Journal issue updated.', journal: updated });
   } catch (err) {
     console.error(err);
@@ -174,6 +194,7 @@ router.post('/journals/:id/deploy', async (req, res) => {
   try {
     const deployed = await db.journals.deploy(req.params.id);
     if (!deployed) return res.status(404).json({ success: false, message: 'Journal issue not found.' });
+    await logAudit(req, 'Deployed Journal Issue', deployed.name);
     res.json({ success: true, message: 'Journal deployed and published to digital library catalog!', journal: deployed });
   } catch (err) {
     console.error(err);
@@ -184,6 +205,7 @@ router.post('/journals/:id/deploy', async (req, res) => {
 router.delete('/journals/:id', async (req, res) => {
   try {
     const deleted = await db.journals.delete(req.params.id);
+    if (deleted) await logAudit(req, 'Deleted Journal Issue', `ID: ${req.params.id}`);
     res.json({ success: deleted, message: deleted ? 'Journal issue deleted.' : 'Journal issue not found.' });
   } catch (err) {
     console.error(err);
@@ -267,6 +289,8 @@ router.post('/articles/publish-submission', async (req, res) => {
       });
     }
 
+    await logAudit(req, 'Published Article', `"${newArticle.title}" assigned to ${journal.name}`);
+
     res.status(201).json({
       success: true,
       message: `Paper successfully published to ${journal.name}!`,
@@ -282,6 +306,7 @@ router.put('/articles/:id', async (req, res) => {
   try {
     const updated = await db.articles.update(req.params.id, req.body);
     if (!updated) return res.status(404).json({ success: false, message: 'Article not found.' });
+    await logAudit(req, 'Updated Article', updated.title);
     res.json({ success: true, message: 'Article updated successfully.', article: updated });
   } catch (err) {
     console.error(err);
@@ -292,6 +317,7 @@ router.put('/articles/:id', async (req, res) => {
 router.delete('/articles/:id', async (req, res) => {
   try {
     const deleted = await db.articles.delete(req.params.id);
+    if (deleted) await logAudit(req, 'Deleted Article', `ID: ${req.params.id}`);
     res.json({ success: deleted, message: deleted ? 'Article removed from issue.' : 'Article not found.' });
   } catch (err) {
     console.error(err);
@@ -322,6 +348,7 @@ router.post('/sections', async (req, res) => {
       icon: icon || 'Folder',
       is_active: true,
     });
+    await logAudit(req, 'Created Section', newSection.title);
     res.status(201).json({ success: true, message: 'Section created.', section: newSection });
   } catch (err) {
     console.error(err);
@@ -333,6 +360,7 @@ router.put('/sections/:id', async (req, res) => {
   try {
     const updated = await db.sections.update(req.params.id, req.body);
     if (!updated) return res.status(404).json({ success: false, message: 'Section not found.' });
+    await logAudit(req, 'Updated Section', updated.title);
     res.json({ success: true, message: 'Section updated.', section: updated });
   } catch (err) {
     console.error(err);
@@ -343,6 +371,7 @@ router.put('/sections/:id', async (req, res) => {
 router.delete('/sections/:id', async (req, res) => {
   try {
     const deleted = await db.sections.delete(req.params.id);
+    if (deleted) await logAudit(req, 'Deleted Section', `ID: ${req.params.id}`);
     res.json({ success: deleted, message: deleted ? 'Section deleted.' : 'Section not found.' });
   } catch (err) {
     console.error(err);
@@ -378,6 +407,7 @@ router.post('/links', async (req, res) => {
       icon: icon || 'ExternalLink',
       is_active: true,
     });
+    await logAudit(req, 'Created Quick Link', `${newLink.label} (${newLink.url})`);
     res.status(201).json({ success: true, message: 'Link created successfully.', link: newLink });
   } catch (err) {
     console.error(err);
@@ -389,6 +419,7 @@ router.put('/links/:id', async (req, res) => {
   try {
     const updated = await db.links.update(req.params.id, req.body);
     if (!updated) return res.status(404).json({ success: false, message: 'Link not found.' });
+    await logAudit(req, 'Updated Quick Link', updated.label || `ID: ${req.params.id}`);
     res.json({ success: true, message: 'Link updated successfully.', link: updated });
   } catch (err) {
     console.error(err);
@@ -399,6 +430,7 @@ router.put('/links/:id', async (req, res) => {
 router.delete('/links/:id', async (req, res) => {
   try {
     const deleted = await db.links.delete(req.params.id);
+    if (deleted) await logAudit(req, 'Deleted Quick Link', `ID: ${req.params.id}`);
     res.json({ success: deleted, message: deleted ? 'Link deleted.' : 'Link not found.' });
   } catch (err) {
     console.error(err);
@@ -450,6 +482,7 @@ router.post('/news', async (req, res) => {
       image_url: image_url || '',
       is_active: true,
     });
+    await logAudit(req, 'Published News/Bulletin', newNews.title);
     res.status(201).json({ success: true, message: 'News item published.', news: newNews });
   } catch (err) {
     console.error(err);
@@ -461,6 +494,7 @@ router.put('/news/:id', async (req, res) => {
   try {
     const updated = await db.news.update(req.params.id, req.body);
     if (!updated) return res.status(404).json({ success: false, message: 'News item not found.' });
+    await logAudit(req, 'Updated News/Bulletin', updated.title);
     res.json({ success: true, message: 'News item updated.', news: updated });
   } catch (err) {
     console.error(err);
@@ -471,6 +505,7 @@ router.put('/news/:id', async (req, res) => {
 router.delete('/news/:id', async (req, res) => {
   try {
     const deleted = await db.news.delete(req.params.id);
+    if (deleted) await logAudit(req, 'Deleted News/Bulletin', `ID: ${req.params.id}`);
     res.json({ success: deleted, message: deleted ? 'News item removed.' : 'News item not found.' });
   } catch (err) {
     console.error(err);
@@ -495,6 +530,7 @@ router.post('/journal-overrides/:id/toggle', async (req, res) => {
   const { is_active } = req.body;
   try {
     const updated = await db.journalOverrides.toggle(req.params.id, is_active);
+    await logAudit(req, 'Toggled E-Journal Visibility', `Journal ID: ${req.params.id} -> ${is_active ? 'Active' : 'Disabled'}`);
     res.json({ success: true, message: `Journal entry visibility toggled to ${is_active ? 'active' : 'disabled'}.`, override: updated });
   } catch (err) {
     console.error(err);
@@ -505,6 +541,7 @@ router.post('/journal-overrides/:id/toggle', async (req, res) => {
 router.post('/journal-overrides/:id', async (req, res) => {
   try {
     const updated = await db.journalOverrides.set(req.params.id, req.body);
+    await logAudit(req, 'Customized E-Journal Entry', `Journal ID: ${req.params.id}`);
     res.json({ success: true, message: 'Journal entry updated.', override: updated });
   } catch (err) {
     console.error(err);
@@ -517,6 +554,7 @@ router.delete('/journal-overrides/:id', async (req, res) => {
     if (db.journalOverrides.delete) {
       await db.journalOverrides.delete(req.params.id);
     }
+    await logAudit(req, 'Reset E-Journal Override', `Journal ID: ${req.params.id}`);
     res.json({ success: true, message: 'Journal override deleted.' });
   } catch (err) {
     console.error(err);
@@ -542,6 +580,7 @@ router.put('/users/:id', async (req, res) => {
   try {
     const updated = await db.users.update(req.params.id, { role, status });
     if (!updated) return res.status(404).json({ success: false, message: 'User not found.' });
+    await logAudit(req, 'Updated User Account', `User: ${updated.full_name || updated.email} (Role: ${role || 'unchanged'}, Status: ${status || 'unchanged'})`);
     res.json({ success: true, message: 'User updated.', user: updated });
   } catch (err) {
     console.error(err);
@@ -566,6 +605,8 @@ router.post('/users/:id/verify', async (req, res) => {
       console.warn('[ADMIN] Could not create verification notification:', notifErr);
     }
 
+    await logAudit(req, 'Approved Researcher Account', `Verified: ${user.full_name} (${user.email})`);
+
     res.json({
       success: true,
       message: `User ${user.full_name} has been verified and approved.`,
@@ -579,8 +620,10 @@ router.post('/users/:id/verify', async (req, res) => {
 
 router.delete('/users/:id', async (req, res) => {
   try {
+    const user = await db.users.findById(req.params.id);
     const success = await db.users.delete(req.params.id);
     if (!success) return res.status(404).json({ success: false, message: 'User not found.' });
+    await logAudit(req, 'Deleted User Account', `Removed: ${user?.full_name || req.params.id} (${user?.email || 'N/A'})`);
     res.json({ success: true, message: 'User account removed.' });
   } catch (err) {
     console.error('[ADMIN DELETE USER ERROR]', err);
@@ -617,6 +660,7 @@ router.post('/newspapers', async (req, res) => {
       file_size: file_size || '',
       page_count: page_count ? Number(page_count) : undefined,
     });
+    await logAudit(req, 'Uploaded Newspaper Edition', `${newPaper.title} (${newPaper.date})`);
     res.status(201).json({ success: true, message: 'Newspaper edition uploaded.', newspaper: newPaper });
   } catch (err) {
     console.error(err);
@@ -628,6 +672,7 @@ router.put('/newspapers/:id', async (req, res) => {
   try {
     const updated = await db.newspapers.update(req.params.id, req.body);
     if (!updated) return res.status(404).json({ success: false, message: 'Newspaper not found.' });
+    await logAudit(req, 'Updated Newspaper Edition', updated.title);
     res.json({ success: true, message: 'Newspaper updated.', newspaper: updated });
   } catch (err) {
     console.error(err);
@@ -638,10 +683,37 @@ router.put('/newspapers/:id', async (req, res) => {
 router.delete('/newspapers/:id', async (req, res) => {
   try {
     const deleted = await db.newspapers.delete(req.params.id);
+    if (deleted) await logAudit(req, 'Deleted Newspaper Edition', `ID: ${req.params.id}`);
     res.json({ success: deleted, message: deleted ? 'Newspaper deleted.' : 'Newspaper not found.' });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: 'Server error.' });
+  }
+});
+
+// ==========================================
+// 11. AUDIT LOGS
+// ==========================================
+router.get('/audit-logs', async (req, res) => {
+  try {
+    const logs = db.auditLogs ? await db.auditLogs.list(100) : [];
+    res.json({ success: true, logs: logs || [] });
+  } catch (err) {
+    console.error('[ADMIN AUDIT LOGS ERROR]', err);
+    res.status(500).json({ success: false, message: 'Server error fetching audit logs.' });
+  }
+});
+
+router.delete('/audit-logs', async (req, res) => {
+  try {
+    if (db.auditLogs && db.auditLogs.clear) {
+      await db.auditLogs.clear();
+      await logAudit(req, 'Cleared Audit Log', 'Administrator cleared historical audit entries');
+    }
+    res.json({ success: true, message: 'Audit logs cleared successfully.' });
+  } catch (err) {
+    console.error('[ADMIN CLEAR AUDIT LOGS ERROR]', err);
+    res.status(500).json({ success: false, message: 'Server error clearing audit logs.' });
   }
 });
 

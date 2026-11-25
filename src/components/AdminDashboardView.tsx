@@ -41,6 +41,7 @@ import {
   type DynamicLink,
   type DynamicNews,
   type DynamicNewspaper,
+  type AuditLog,
 } from '../services/api';
 import { FACULTY_CATALOGS, TOTAL_JOURNAL_COUNT } from '../data/journalsIndex';
 
@@ -52,7 +53,7 @@ interface AdminDashboardViewProps {
 
 export function AdminDashboardView({ user, onLogout, onNavigateHome }: AdminDashboardViewProps) {
   const [activeTab, setActiveTab] = useState<
-    'overview' | 'submissions' | 'journals' | 'articles' | 'links' | 'news' | 'newspapers' | 'overrides' | 'users'
+    'overview' | 'submissions' | 'journals' | 'articles' | 'links' | 'news' | 'newspapers' | 'overrides' | 'accounts' | 'users'
   >('overview');
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
@@ -70,6 +71,10 @@ export function AdminDashboardView({ user, onLogout, onNavigateHome }: AdminDash
   const [newspapers, setNewspapers] = useState<DynamicNewspaper[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [overrides, setOverrides] = useState<Record<string, { is_active?: boolean }>>({});
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
+  const [auditSearch, setAuditSearch] = useState('');
+  const [accountFilter, setAccountFilter] = useState<'all' | 'pending' | 'active' | 'suspended'>('all');
+  const [accountSearch, setAccountSearch] = useState('');
 
   // Newspaper modal & states
   const [showNewspaperModal, setShowNewspaperModal] = useState(false);
@@ -206,6 +211,7 @@ export function AdminDashboardView({ user, onLogout, onNavigateHome }: AdminDash
         usersData,
         overridesData,
         newspapersData,
+        auditLogsData,
       ] = await Promise.all([
         api.admin.getStats(),
         api.admin.getSubmissions(),
@@ -217,6 +223,7 @@ export function AdminDashboardView({ user, onLogout, onNavigateHome }: AdminDash
         api.admin.getUsers(),
         api.public.getJournalOverrides(),
         api.admin.getNewspapers().catch(() => ({ success: false, newspapers: [] })),
+        api.admin.getAuditLogs().catch(() => ({ success: false, logs: [] })),
       ]);
 
       if (statsData.success) setStats(statsData.stats);
@@ -229,6 +236,7 @@ export function AdminDashboardView({ user, onLogout, onNavigateHome }: AdminDash
       if (usersData.success) setUsers(usersData.users);
       if (overridesData.success) setOverrides(overridesData.overrides);
       if (newspapersData && newspapersData.success) setNewspapers(newspapersData.newspapers || []);
+      if (auditLogsData && auditLogsData.success) setAuditLogs(auditLogsData.logs || []);
     } catch (err) {
       console.error('Error loading admin portal data:', err);
       showToast('Failed to load some admin datasets.', 'error');
@@ -929,15 +937,17 @@ export function AdminDashboardView({ user, onLogout, onNavigateHome }: AdminDash
     { id: 'newspapers', label: 'Newspapers Upload', icon: FileText, badge: newspapers.length || null, badgeColor: 'bg-amber-600' },
     { id: 'overrides', label: 'E-Journal Catalog', icon: GraduationCap, badge: TOTAL_JOURNAL_COUNT, badgeColor: 'bg-indigo-600' },
     {
-      id: 'users',
-      label: 'Users & Roles',
+      id: 'accounts',
+      label: 'Accounts',
       icon: Users,
-      badge: pendingUsersCount > 0 ? pendingUsersCount : users.length || null,
+      badge: pendingUsersCount > 0 ? `${pendingUsersCount} pending` : users.length || null,
       badgeColor: pendingUsersCount > 0 ? 'bg-amber-600' : 'bg-stone-500',
     },
   ] as const;
 
-  const activeNavItem = navItems.find((n) => n.id === activeTab);
+  const activeNavItem =
+    navItems.find((n) => n.id === activeTab) ||
+    (activeTab === 'users' ? navItems.find((n) => n.id === 'accounts') : undefined);
 
   return (
     <div className="min-h-[calc(100vh-4rem)] sm:min-h-[calc(100vh-5rem)] bg-stone-100 flex flex-col animate-fade-in">
@@ -1023,7 +1033,7 @@ export function AdminDashboardView({ user, onLogout, onNavigateHome }: AdminDash
             </p>
             {navItems.map((item) => {
               const Icon = item.icon;
-              const isActive = activeTab === item.id;
+              const isActive = activeTab === item.id || (item.id === 'accounts' && activeTab === 'users');
               return (
                 <button
                   key={item.id}
@@ -1083,16 +1093,16 @@ export function AdminDashboardView({ user, onLogout, onNavigateHome }: AdminDash
                     {pendingUsersCount} New Researcher Registration{pendingUsersCount > 1 ? 's' : ''} Awaiting Admin Verification
                   </h3>
                   <p className="text-xs text-amber-800/80">
-                    Newly registered researchers cannot sign in or submit manuscripts until approved from the Users &amp; Roles tab.
+                    Newly registered researchers cannot sign in or submit manuscripts until approved from the Accounts tab.
                   </p>
                 </div>
               </div>
               <button
                 type="button"
-                onClick={() => setActiveTab('users')}
+                onClick={() => setActiveTab('accounts')}
                 className="inline-flex items-center gap-1.5 rounded-lg bg-amber-700 hover:bg-amber-800 text-white px-4 py-2 text-xs font-semibold shadow-xs transition-colors shrink-0 cursor-pointer"
               >
-                <span>Review &amp; Verify Users</span>
+                <span>Review &amp; Verify Accounts</span>
                 <ChevronRight className="h-3.5 w-3.5" />
               </button>
             </div>
@@ -1186,6 +1196,136 @@ export function AdminDashboardView({ user, onLogout, onNavigateHome }: AdminDash
                 Manage Journal Issues →
               </button>
             </div>
+          </div>
+
+          {/* ── Administrative Audit & Activity Log ── */}
+          <div className="rounded-xl border border-stone-200 bg-white p-6 shadow-sm space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-stone-200 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-lg bg-[#14452F]/10 border border-[#14452F]/20 flex items-center justify-center text-[#14452F] shrink-0">
+                  <ShieldCheck className="h-5 w-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-serif text-lg font-bold text-stone-900">
+                      Administrative Audit &amp; Activity Log
+                    </h3>
+                    <span className="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                      Live Audit Feed
+                    </span>
+                  </div>
+                  <p className="text-xs text-stone-500">
+                    Real-time ledger recording every successful administrative modification, user approval, publication, and catalog update.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 self-start sm:self-center">
+                <div className="relative">
+                  <Search className="h-3.5 w-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
+                  <input
+                    type="text"
+                    value={auditSearch}
+                    onChange={(e) => setAuditSearch(e.target.value)}
+                    placeholder="Search audit actions..."
+                    className="pl-8 pr-3 py-1.5 rounded-lg border border-stone-300 text-xs bg-stone-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#14452F] w-48 sm:w-56"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const res = await api.admin.getAuditLogs().catch(() => ({ success: false, logs: [] }));
+                    if (res.success) {
+                      setAuditLogs(res.logs || []);
+                      showToast('Audit log refreshed.');
+                    }
+                  }}
+                  className="p-1.5 rounded-lg border border-stone-300 bg-white hover:bg-stone-50 text-stone-600 transition-colors cursor-pointer"
+                  title="Refresh Audit Log"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                </button>
+                {auditLogs.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (!confirm('Are you sure you want to clear the audit activity history?')) return;
+                      const res = await api.admin.clearAuditLogs();
+                      if (res.success) {
+                        setAuditLogs([]);
+                        showToast('Audit log history cleared.');
+                        loadAllData();
+                      }
+                    }}
+                    className="p-1.5 rounded-lg border border-stone-200 bg-white hover:bg-red-50 text-stone-400 hover:text-red-600 transition-colors cursor-pointer"
+                    title="Clear Historical Log"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Filtered logs */}
+            {(() => {
+              const filtered = auditLogs.filter((log) => {
+                if (!auditSearch.trim()) return true;
+                const q = auditSearch.toLowerCase();
+                return (
+                  log.action.toLowerCase().includes(q) ||
+                  (log.details && log.details.toLowerCase().includes(q)) ||
+                  log.admin_name.toLowerCase().includes(q)
+                );
+              });
+
+              if (filtered.length === 0) {
+                return (
+                  <div className="py-10 text-center text-stone-400 space-y-2">
+                    <ShieldCheck className="h-8 w-8 mx-auto text-stone-300" />
+                    <p className="text-xs font-semibold text-stone-600">
+                      {auditSearch ? 'No audit actions matching your search query.' : 'No administrative actions recorded yet.'}
+                    </p>
+                    <p className="text-[11px] text-stone-400 max-w-md mx-auto">
+                      Every administrative edit, user approval, article publication, link update, and newspaper upload will automatically record here with timestamp and administrator signature.
+                    </p>
+                  </div>
+                );
+              }
+
+              return (
+                <div className="divide-y divide-stone-100 max-h-[460px] overflow-y-auto pr-1">
+                  {filtered.map((log) => (
+                    <div
+                      key={log.id}
+                      className="py-3 px-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-stone-50/80 rounded-lg transition-colors"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="h-8 w-8 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-700 shrink-0 mt-0.5">
+                          <CheckCircle2 className="h-4 w-4" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-xs font-bold text-stone-900">{log.action}</span>
+                            <span className="text-[10px] bg-stone-100 text-stone-700 px-2 py-0.5 rounded font-medium border border-stone-200">
+                              by {log.admin_name}
+                            </span>
+                          </div>
+                          {log.details && (
+                            <p className="text-[11px] text-stone-600 mt-0.5 leading-relaxed font-mono">
+                              {log.details}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-[11px] text-stone-400 shrink-0 self-end sm:self-center font-mono">
+                        <Clock className="h-3 w-3 text-stone-400" />
+                        <span>{new Date(log.created_at).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
           </div>
         </div>
       )}
@@ -3142,172 +3282,326 @@ export function AdminDashboardView({ user, onLogout, onNavigateHome }: AdminDash
       )}
 
       {/* ==================================================== */}
-      {/* TAB 8: USERS & ROLES */}
+      {/* TAB 8: ACCOUNTS & MEMBERSHIP DIRECTORY */}
       {/* ==================================================== */}
-      {activeTab === 'users' && (
-        <div className="rounded-xl border border-stone-200 bg-white overflow-hidden shadow-sm space-y-4 p-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-stone-200 pb-4">
-            <div>
-              <h2 className="font-serif text-xl font-bold text-stone-900">
-                Registered Portal Users &amp; Roles
-              </h2>
-              <p className="text-xs text-stone-500">
-                Verify new researcher registrations, manage permissions, and supervise account statuses.
-              </p>
+      {(activeTab === 'accounts' || activeTab === 'users') && (
+        <div className="space-y-6">
+          {/* Header & KPI Summary Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="rounded-xl border border-stone-200 bg-white p-5 shadow-sm space-y-1 border-l-4 border-l-[#14452F]">
+              <span className="text-xs font-semibold text-stone-500 uppercase tracking-wider">
+                Total Accounts
+              </span>
+              <div className="text-3xl font-bold text-stone-900">{users.length}</div>
+              <p className="text-[11px] text-stone-500">Registered portal profiles</p>
             </div>
 
-            {pendingUsersCount > 0 && (
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-50 border border-amber-300 text-amber-900 text-xs font-semibold">
-                <Clock className="h-4 w-4 text-amber-600 animate-pulse" />
-                <span>{pendingUsersCount} Awaiting Verification</span>
+            <div className="rounded-xl border border-stone-200 bg-white p-5 shadow-sm space-y-1 border-l-4 border-l-emerald-600">
+              <span className="text-xs font-semibold text-stone-500 uppercase tracking-wider">
+                Active Members
+              </span>
+              <div className="text-3xl font-bold text-emerald-700">
+                {users.filter((u) => u.status === 'active').length}
               </div>
-            )}
+              <p className="text-[11px] text-stone-500">Verified academic authors &amp; staff</p>
+            </div>
+
+            <div className="rounded-xl border border-stone-200 bg-white p-5 shadow-sm space-y-1 border-l-4 border-l-amber-500">
+              <span className="text-xs font-semibold text-stone-500 uppercase tracking-wider">
+                Pending Verification
+              </span>
+              <div className="text-3xl font-bold text-amber-600">{pendingUsersCount}</div>
+              <p className="text-[11px] text-stone-500">Awaiting administrator approval</p>
+            </div>
+
+            <div className="rounded-xl border border-stone-200 bg-white p-5 shadow-sm space-y-1 border-l-4 border-l-stone-400">
+              <span className="text-xs font-semibold text-stone-500 uppercase tracking-wider">
+                Suspended Accounts
+              </span>
+              <div className="text-3xl font-bold text-stone-600">
+                {users.filter((u) => u.status === 'suspended').length}
+              </div>
+              <p className="text-[11px] text-stone-500">Deactivated or restricted</p>
+            </div>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="border-b border-stone-200 bg-stone-50 text-stone-600 font-semibold uppercase tracking-wider">
-                  <th className="py-3 px-4">User Details</th>
-                  <th className="py-3 px-4">Role</th>
-                  <th className="py-3 px-4">Account Status</th>
-                  <th className="py-3 px-4">Registration Date</th>
-                  <th className="py-3 px-4">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-stone-100">
-                {users.map((u) => {
-                  const isPending = u.status === 'pending';
-                  const isActive = u.status === 'active';
+          {/* Accounts Main Panel */}
+          <div className="rounded-xl border border-stone-200 bg-white overflow-hidden shadow-sm space-y-4 p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-stone-200 pb-4">
+              <div>
+                <h2 className="font-serif text-xl font-bold text-stone-900">
+                  Accounts &amp; Membership Directory
+                </h2>
+                <p className="text-xs text-stone-500">
+                  Manage all portal members, approve new researcher registrations, and control account permissions.
+                </p>
+              </div>
 
-                  return (
-                    <tr
-                      key={u.id}
-                      className={`hover:bg-stone-50/60 transition-colors ${
-                        isPending ? 'bg-amber-50/40' : ''
-                      }`}
-                    >
-                      <td className="py-4 px-4 font-semibold text-stone-900">
-                        <div className="flex items-center gap-2">
-                          <span>{u.full_name}</span>
-                          {isPending && (
-                            <span className="text-[10px] bg-amber-200 text-amber-900 px-1.5 py-0.2 rounded font-bold uppercase">
-                              New
-                            </span>
-                          )}
-                        </div>
-                        <div className="text-[11px] text-stone-500 font-normal">{u.email}</div>
-                      </td>
-                      <td className="py-4 px-4">
-                        <span
-                          className={`rounded px-2 py-0.5 text-[11px] font-semibold uppercase ${
-                            u.role === 'admin'
-                              ? 'bg-purple-100 text-purple-800'
-                              : 'bg-blue-100 text-blue-800'
+              {pendingUsersCount > 0 && (
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-50 border border-amber-300 text-amber-900 text-xs font-semibold">
+                  <Clock className="h-4 w-4 text-amber-600 animate-pulse" />
+                  <span>{pendingUsersCount} New Account{pendingUsersCount > 1 ? 's' : ''} Awaiting Approval</span>
+                </div>
+              )}
+            </div>
+
+            {/* Filter Pills & Search Bar */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pt-1">
+              <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                <button
+                  type="button"
+                  onClick={() => setAccountFilter('all')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer shrink-0 ${
+                    accountFilter === 'all'
+                      ? 'bg-[#14452F] text-white shadow-xs'
+                      : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+                  }`}
+                >
+                  All Accounts ({users.length})
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setAccountFilter('pending')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer shrink-0 flex items-center gap-1.5 ${
+                    accountFilter === 'pending'
+                      ? 'bg-amber-600 text-white shadow-xs'
+                      : 'bg-amber-50 text-amber-900 border border-amber-200 hover:bg-amber-100'
+                  }`}
+                >
+                  <Clock className="h-3.5 w-3.5 text-amber-500" />
+                  <span>Pending Verification ({pendingUsersCount})</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setAccountFilter('active')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer shrink-0 ${
+                    accountFilter === 'active'
+                      ? 'bg-emerald-700 text-white shadow-xs'
+                      : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+                  }`}
+                >
+                  Active Members ({users.filter((u) => u.status === 'active').length})
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setAccountFilter('suspended')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer shrink-0 ${
+                    accountFilter === 'suspended'
+                      ? 'bg-red-700 text-white shadow-xs'
+                      : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+                  }`}
+                >
+                  Suspended ({users.filter((u) => u.status === 'suspended').length})
+                </button>
+              </div>
+
+              <div className="relative">
+                <Search className="h-3.5 w-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
+                <input
+                  type="text"
+                  value={accountSearch}
+                  onChange={(e) => setAccountSearch(e.target.value)}
+                  placeholder="Search by name, email, or role..."
+                  className="pl-8 pr-3 py-1.5 rounded-lg border border-stone-300 text-xs bg-stone-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#14452F] w-full md:w-64"
+                />
+              </div>
+            </div>
+
+            {/* Accounts Table */}
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="border-b border-stone-200 bg-stone-50 text-stone-600 font-semibold uppercase tracking-wider">
+                    <th className="py-3 px-4">Account Holder</th>
+                    <th className="py-3 px-4">Role</th>
+                    <th className="py-3 px-4">Membership Status</th>
+                    <th className="py-3 px-4">Registered Date</th>
+                    <th className="py-3 px-4 text-right">Administrative Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-stone-100">
+                  {(() => {
+                    const filteredUsers = users.filter((u) => {
+                      // Filter by status tab
+                      if (accountFilter !== 'all' && u.status !== accountFilter) return false;
+                      // Filter by search query
+                      if (accountSearch.trim()) {
+                        const q = accountSearch.toLowerCase();
+                        return (
+                          u.full_name.toLowerCase().includes(q) ||
+                          u.email.toLowerCase().includes(q) ||
+                          u.role.toLowerCase().includes(q)
+                        );
+                      }
+                      return true;
+                    });
+
+                    if (filteredUsers.length === 0) {
+                      return (
+                        <tr>
+                          <td colSpan={5} className="py-12 text-center text-stone-400">
+                            <Users className="h-8 w-8 mx-auto text-stone-300 mb-2" />
+                            <p className="text-xs font-semibold text-stone-600">
+                              No accounts match your current filter or search criteria.
+                            </p>
+                          </td>
+                        </tr>
+                      );
+                    }
+
+                    return filteredUsers.map((u) => {
+                      const isPending = u.status === 'pending';
+                      const isActive = u.status === 'active';
+                      const isSuspended = u.status === 'suspended';
+
+                      return (
+                        <tr
+                          key={u.id}
+                          className={`hover:bg-stone-50/80 transition-colors ${
+                            isPending ? 'bg-amber-50/40' : ''
                           }`}
                         >
-                          {u.role}
-                        </span>
-                      </td>
-                      <td className="py-4 px-4">
-                        {isPending ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 text-amber-800 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider">
-                            <Clock className="h-3 w-3 text-amber-600 animate-pulse" />
-                            <span>Pending Verification</span>
-                          </span>
-                        ) : isActive ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 text-emerald-800 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider">
-                            <CheckCircle2 className="h-3 w-3 text-emerald-600" />
-                            <span>Verified / Active</span>
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-red-100 text-red-800 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider">
-                            <XCircle className="h-3 w-3 text-red-600" />
-                            <span>Suspended</span>
-                          </span>
-                        )}
-                      </td>
-                      <td className="py-4 px-4 text-stone-500">
-                        {new Date(u.created_at).toLocaleDateString()}
-                      </td>
-                      <td className="py-4 px-4">
-                        {isPending ? (
-                          <div className="flex items-center gap-2">
-                            <button
-                              type="button"
-                              onClick={async () => {
-                                const res = await api.admin.verifyUser(u.id);
-                                if (res.success) {
-                                  showToast(`Researcher "${u.full_name}" verified successfully!`, 'success');
-                                  loadAllData();
-                                } else {
-                                  showToast(res.message || 'Verification failed.', 'error');
-                                }
-                              }}
-                              className="inline-flex items-center gap-1.5 rounded-md bg-emerald-700 hover:bg-emerald-800 text-white px-3 py-1.5 text-xs font-semibold shadow-xs transition-colors cursor-pointer"
-                              title="Verify researcher account and enable login"
-                            >
-                              <CheckCircle2 className="h-3.5 w-3.5" />
-                              <span>Approve &amp; Verify</span>
-                            </button>
+                          <td className="py-3.5 px-4 font-semibold text-stone-900">
+                            <div className="flex items-center gap-2.5">
+                              <div className="h-8 w-8 rounded-full bg-[#14452F]/10 text-[#14452F] flex items-center justify-center font-bold text-xs uppercase shrink-0">
+                                {u.full_name ? u.full_name.charAt(0) : 'U'}
+                              </div>
+                              <div>
+                                <div className="flex items-center gap-1.5">
+                                  <span>{u.full_name}</span>
+                                  {isPending && (
+                                    <span className="text-[10px] bg-amber-200 text-amber-900 px-1.5 py-0.2 rounded font-bold uppercase tracking-wider">
+                                      Pending Approval
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="text-[11px] text-stone-500 font-normal">{u.email}</div>
+                              </div>
+                            </div>
+                          </td>
 
-                            <button
-                              type="button"
-                              onClick={async () => {
-                                if (confirm(`Reject and delete registration for ${u.full_name}?`)) {
-                                  await api.admin.deleteUser(u.id);
-                                  showToast(`Registration for ${u.full_name} rejected.`);
-                                  loadAllData();
-                                }
-                              }}
-                              className="inline-flex items-center gap-1 rounded-md border border-stone-200 text-red-600 hover:bg-red-50 px-2.5 py-1.5 text-xs font-medium transition-colors cursor-pointer"
-                              title="Reject registration"
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                              <span>Reject</span>
-                            </button>
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-3">
-                            <button
-                              type="button"
-                              onClick={async () => {
-                                const newStatus = isActive ? 'suspended' : 'active';
-                                await api.admin.updateUser(u.id, { status: newStatus });
-                                showToast(`User status set to ${newStatus}`);
-                                loadAllData();
-                              }}
-                              className={`text-xs font-semibold hover:underline cursor-pointer ${
-                                isActive ? 'text-red-700' : 'text-emerald-700'
+                          <td className="py-3.5 px-4">
+                            <span
+                              className={`rounded px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider ${
+                                u.role === 'admin'
+                                  ? 'bg-purple-100 text-purple-800'
+                                  : 'bg-blue-100 text-blue-800'
                               }`}
                             >
-                              {isActive ? 'Suspend Account' : 'Reactivate Account'}
-                            </button>
+                              {u.role}
+                            </span>
+                          </td>
 
-                            {u.role !== 'admin' && (
-                              <button
-                                type="button"
-                                onClick={async () => {
-                                  if (confirm(`Are you sure you want to delete user ${u.full_name}?`)) {
-                                    await api.admin.deleteUser(u.id);
-                                    showToast(`User ${u.full_name} deleted.`);
-                                    loadAllData();
-                                  }
-                                }}
-                                className="text-stone-400 hover:text-red-600 transition-colors cursor-pointer"
-                                title="Delete user"
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </button>
+                          <td className="py-3.5 px-4">
+                            {isPending ? (
+                              <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 text-amber-900 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider">
+                                <Clock className="h-3 w-3 text-amber-600 animate-pulse" />
+                                <span>Awaiting Verification</span>
+                              </span>
+                            ) : isActive ? (
+                              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 text-emerald-800 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider">
+                                <CheckCircle2 className="h-3 w-3 text-emerald-600" />
+                                <span>Verified Member</span>
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1.5 rounded-full bg-red-100 text-red-800 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider">
+                                <XCircle className="h-3 w-3 text-red-600" />
+                                <span>Suspended</span>
+                              </span>
                             )}
-                          </div>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                          </td>
+
+                          <td className="py-3.5 px-4 text-stone-500 font-mono text-[11px]">
+                            {new Date(u.created_at).toLocaleDateString('en-US', {
+                              year: 'numeric',
+                              month: 'short',
+                              day: 'numeric',
+                            })}
+                          </td>
+
+                          <td className="py-3.5 px-4 text-right">
+                            {isPending ? (
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  type="button"
+                                  onClick={async () => {
+                                    const res = await api.admin.verifyUser(u.id);
+                                    if (res.success) {
+                                      showToast(`Researcher "${u.full_name}" verified successfully!`, 'success');
+                                      loadAllData();
+                                    } else {
+                                      showToast(res.message || 'Verification failed.', 'error');
+                                    }
+                                  }}
+                                  className="inline-flex items-center gap-1.5 rounded-md bg-emerald-700 hover:bg-emerald-800 text-white px-3 py-1.5 text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                                  title="Approve researcher account and enable login"
+                                >
+                                  <CheckCircle2 className="h-3.5 w-3.5" />
+                                  <span>Approve Member</span>
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={async () => {
+                                    if (confirm(`Reject and delete registration for ${u.full_name}?`)) {
+                                      await api.admin.deleteUser(u.id);
+                                      showToast(`Registration for ${u.full_name} rejected.`);
+                                      loadAllData();
+                                    }
+                                  }}
+                                  className="inline-flex items-center gap-1 rounded-md border border-stone-200 text-red-600 hover:bg-red-50 px-2.5 py-1.5 text-xs font-medium transition-colors cursor-pointer"
+                                  title="Reject registration"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                  <span>Reject</span>
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="flex items-center justify-end gap-3">
+                                <button
+                                  type="button"
+                                  onClick={async () => {
+                                    const newStatus = isActive ? 'suspended' : 'active';
+                                    await api.admin.updateUser(u.id, { status: newStatus });
+                                    showToast(`Account for ${u.full_name} set to ${newStatus}.`);
+                                    loadAllData();
+                                  }}
+                                  className={`text-xs font-semibold hover:underline cursor-pointer ${
+                                    isActive ? 'text-amber-700 hover:text-amber-800' : 'text-emerald-700 hover:text-emerald-800'
+                                  }`}
+                                >
+                                  {isActive ? 'Suspend' : 'Reactivate'}
+                                </button>
+
+                                {u.role !== 'admin' && (
+                                  <button
+                                    type="button"
+                                    onClick={async () => {
+                                      if (confirm(`Are you sure you want to permanently delete account for ${u.full_name}?`)) {
+                                        await api.admin.deleteUser(u.id);
+                                        showToast(`Account for ${u.full_name} deleted.`);
+                                        loadAllData();
+                                      }
+                                    }}
+                                    className="text-stone-400 hover:text-red-600 p-1 rounded hover:bg-stone-100 transition-colors cursor-pointer"
+                                    title="Delete account"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </button>
+                                )}
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    });
+                  })()}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}
